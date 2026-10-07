@@ -8,6 +8,7 @@ import { computeStats, sessionDate } from "../utils/stats";
 import { sortTasks } from "../utils/tasks";
 import { formatDuration } from "../utils/time";
 import TaskRow from "../components/TaskRow";
+import TodaysPlanCard from "../components/TodaysPlanCard";
 
 const DAILY_GOAL_MINUTES = 120;
 const RING_RADIUS = 54;
@@ -56,6 +57,7 @@ export default function Dashboard() {
             Start focus
           </Link>
         </section>
+        <TodaysPlanCard />
 
         {/* Up next (tasks) */}
         <section className="card">
