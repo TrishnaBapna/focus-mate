@@ -532,3 +532,102 @@ a { color: var(--accent); }
   color: var(--text);
 }
 [data-theme="dark"] .bg-tile { background: rgba(255, 255, 255, 0.08); }
+
+/* ---------- Mobile layout ---------- */
+:root { --sheet-bg: #fffaf5; --sheet-text: #3b2a24; }
+[data-theme="dark"] { --sheet-bg: #2a2030; --sheet-text: #fbeee6; }
+
+/* Hidden on desktop; the media query below turns them on for phones */
+.bottom-nav, .more-sheet, .sheet-backdrop { display: none; }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .app-shell { padding: 14px 14px 100px; }
+  .app-main { min-width: 0; }
+
+  .card { padding: 16px; border-radius: 18px; }
+  .page-title { font-size: 26px; margin-bottom: 14px; }
+  .hero-card h1 { font-size: 22px; }
+
+  /* Bottom navigation bar */
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+    background: var(--sidebar);
+    border-radius: 24px;
+    box-shadow: 0 8px 24px rgba(255, 122, 61, 0.35);
+    z-index: 60;
+  }
+  .bottom-nav a, .bn-more {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 0;
+    border: none;
+    border-radius: 16px;
+    background: none;
+    color: white;
+    font-family: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .bn-icon { font-size: 22px; line-height: 1; }
+  .bn-label { font-size: 11px; font-weight: 700; }
+  .bottom-nav a.active, .bn-more.open { background: rgba(255, 255, 255, 0.3); }
+
+  /* "More" menu */
+  .sheet-backdrop { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); z-index: 55; }
+  .more-sheet {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    padding: 16px;
+    border-radius: 22px;
+    background: var(--sheet-bg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    z-index: 58;
+  }
+  .more-sheet a, .more-sheet button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255, 138, 76, 0.14);
+    color: var(--sheet-text);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .more-sheet a.active { background: var(--accent); color: white; }
+
+  /* Floating timer pill sits above the bottom bar */
+  .mini-timer { bottom: calc(100px + env(safe-area-inset-bottom)); right: 16px; }
+
+  /* Sizing tweaks */
+  .clock { font-size: 56px; }
+  .clock.small { font-size: 34px; }
+  .focus-running { margin: 16px auto; }
+  .bars { height: 130px; }
+  .subject-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .notes-grid { grid-template-columns: 1fr; }
+  .notes-header { flex-wrap: wrap; gap: 10px; }
+  .history-list li { flex-wrap: wrap; }
+
+  /* 16px text stops iPhones from zooming in when you tap a field */
+  input, select, textarea { font-size: 16px !important; }
+}
