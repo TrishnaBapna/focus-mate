@@ -33,3 +33,20 @@ export interface Note {
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }
+
+export type TaskPriority = "high" | "medium" | "low";
+export type TaskStatus = "todo" | "in_progress" | "done";
+
+export interface Task {
+  id: string;
+  title: string;
+  subjectId: string;
+  subjectName: string;
+  subjectEmoji: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  deadline: string; // "YYYY-MM-DD", or "" for no deadline
+  estimatedMinutes: number | null;
+  createdAt?: Timestamp | null;
+  completedAt?: Timestamp | null;
+}

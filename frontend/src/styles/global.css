@@ -319,3 +319,105 @@ a.btn { text-decoration: none; display: inline-block; text-align: center; }
   box-shadow: 0 8px 24px rgba(255, 122, 61, 0.4);
   z-index: 50;
 }
+
+.task-form { max-width: 760px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.task-form-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.task-title-input, .task-form select, .task-form input[type="date"], .task-form .minutes-input {
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 138, 76, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  font-family: inherit;
+}
+.task-form .minutes-input { width: 110px; }
+
+.task-section { max-width: 760px; margin-bottom: 20px; }
+.task-section h3 { margin-bottom: 12px; }
+.task-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.task-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255, 138, 76, 0.12); }
+.task-row:last-child { border-bottom: none; }
+.task-row.done .task-title { text-decoration: line-through; color: var(--muted); }
+.status-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--accent); line-height: 1; }
+.task-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.task-title { font-weight: 700; }
+.task-meta { font-size: 13px; color: var(--muted); }
+.overdue { color: #d64545; font-weight: 700; }
+.task-delete { background: none; border: none; cursor: pointer; opacity: 0.4; }
+.task-delete:hover { opacity: 1; }
+.view-all { display: inline-block; margin-top: 10px; text-decoration: none; }
+
+/* ---------- Dynamic backgrounds ---------- */
+a { color: var(--accent); }
+
+[data-scene="night"],
+[data-scene="focus"] {
+  --card: rgba(255, 255, 255, 0.12);
+  --text: #fbeee6;
+  --muted: #cdbfd6;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.bg-root { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.bg-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s ease; }
+.bg-layer.active { opacity: 1; }
+.bg-layer:not(.active) * { animation-play-state: paused; }
+
+.bg-sunrise   { background: linear-gradient(180deg, #fde2c0 0%, #ffc3a0 50%, #ff9fa8 100%); }
+.bg-afternoon { background: linear-gradient(180deg, #bfe6ff 0%, #e3f4ff 55%, #fff1d6 100%); }
+.bg-sunset    { background: linear-gradient(180deg, #f3a6b8 0%, #ff9d7a 45%, #ffc27a 100%); }
+.bg-night     { background: linear-gradient(180deg, #1b1740 0%, #2d2358 55%, #4a2f5c 100%); }
+.bg-focus     { background: linear-gradient(180deg, #1d2b4f 0%, #2a3f6b 55%, #3b5a7a 100%); }
+.bg-break     { background: linear-gradient(180deg, #e8f5e0 0%, #fdf0d5 60%, #ffe0c2 100%); }
+.bg-celebrate { background: linear-gradient(180deg, #fff3b0 0%, #ffd1e1 55%, #d9ccff 100%); }
+
+/* Sun */
+.sun { position: absolute; border-radius: 50%; animation: glow 8s ease-in-out infinite;
+  background: radial-gradient(circle, #fff6c9 0%, #ffd98a 45%, rgba(255, 200, 120, 0) 72%); }
+.sun-low { width: 420px; height: 420px; left: 8%; bottom: -150px; }
+.sun-high { width: 260px; height: 260px; right: 8%; top: 4%; }
+.sun-set { width: 560px; height: 560px; left: 50%; bottom: -280px; margin-left: -280px;
+  background: radial-gradient(circle, #fff0b8 0%, #ff9d5c 40%, rgba(255, 120, 90, 0) 70%); }
+@keyframes glow { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+
+/* Clouds */
+.cloud { position: absolute; left: 0; width: 140px; height: 44px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85); animation: drift linear infinite; }
+.cloud::before, .cloud::after { content: ""; position: absolute; background: inherit; border-radius: 50%; }
+.cloud::before { width: 64px; height: 64px; top: -30px; left: 22px; }
+.cloud::after { width: 84px; height: 84px; top: -42px; left: 56px; }
+.bg-sunset .cloud { background: rgba(255, 224, 205, 0.7); }
+@keyframes drift {
+  from { transform: translateX(-220px); }
+  to { transform: translateX(calc(100vw + 220px)); }
+}
+
+/* Moon and stars */
+.moon { position: absolute; top: 8%; right: 12%; width: 90px; height: 90px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fffbe8, #f3e7b8 60%, #d9cc9a);
+  box-shadow: 0 0 60px rgba(255, 248, 200, 0.5); }
+.star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff;
+  animation: twinkle 3s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+/* Soft floating colour blobs (focus + break) */
+.blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5;
+  animation: float 18s ease-in-out infinite; }
+.blob.b2 { animation-delay: -6s; }
+@keyframes float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, -30px); } }
+.bg-focus .b1 { width: 420px; height: 420px; background: #6f8bff; left: 10%; top: 15%; }
+.bg-focus .b2 { width: 360px; height: 360px; background: #9a6bff; right: 8%; bottom: 10%; }
+.bg-break .b1 { width: 420px; height: 420px; background: #ffd6a5; left: 8%; top: 20%; }
+.bg-break .b2 { width: 360px; height: 360px; background: #b8e6c1; right: 10%; bottom: 8%; }
+
+/* Confetti */
+.confetti { position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 2px;
+  animation: fall linear infinite; }
+@keyframes fall {
+  from { transform: translateY(-20px) rotate(0deg); }
+  to { transform: translateY(110vh) rotate(540deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-layer * { animation: none !important; }
+}

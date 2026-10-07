@@ -2,8 +2,12 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSessions } from "../hooks/useSessions";
+import { useTasks } from "../hooks/useTasks";
+import { setTaskStatus } from "../services/tasks";
 import { computeStats, sessionDate } from "../utils/stats";
+import { sortTasks } from "../utils/tasks";
 import { formatDuration } from "../utils/time";
+import TaskRow from "../components/TaskRow";
 
 const DAILY_GOAL_MINUTES = 120;
 const RING_RADIUS = 54;
@@ -19,7 +23,12 @@ function greeting() {
 export default function Dashboard() {
   const { user } = useAuth();
   const { sessions } = useSessions(500);
+  const { tasks } = useTasks();
   const stats = useMemo(() => computeStats(sessions), [sessions]);
+  const upNext = useMemo(
+    () => sortTasks(tasks.filter((t) => t.status !== "done")).slice(0, 5),
+    [tasks]
+  );
 
   const name = user?.displayName?.split(" ")[0] ?? "there";
   const goalSeconds = DAILY_GOAL_MINUTES * 60;
@@ -45,6 +54,27 @@ export default function Dashboard() {
           </div>
           <Link to="/focus" className="btn hero-btn">
             Start focus
+          </Link>
+        </section>
+
+        {/* Up next (tasks) */}
+        <section className="card">
+          <h3>Up next</h3>
+          {upNext.length === 0 ? (
+            <p className="empty-note">No open tasks. Nice! 🎉</p>
+          ) : (
+            <ul className="task-list">
+              {upNext.map((t) => (
+                <TaskRow
+                  key={t.id}
+                  task={t}
+                  onStatusClick={() => user && setTaskStatus(user.uid, t.id, "done")}
+                />
+              ))}
+            </ul>
+          )}
+          <Link to="/tasks" className="link-btn view-all">
+            View all tasks →
           </Link>
         </section>
 
