@@ -3,6 +3,7 @@ import { logout } from "../services/auth";
 
 const links = [
   { to: "/", icon: "🏠", label: "Dashboard" },
+  { to: "/subjects", icon: "📚", label: "Subjects" },
   { to: "/planner", icon: "📅", label: "Planner" },
   { to: "/focus", icon: "⏱️", label: "Focus" },
   { to: "/notes", icon: "📝", label: "Notes" },
