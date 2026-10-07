@@ -474,3 +474,61 @@ a { color: var(--accent); }
 .plan-time { font-size: 13px; color: var(--muted); font-weight: 700; }
 .plan-title { font-weight: 700; }
 .btn.small { padding: 6px 14px; font-size: 14px; }
+
+/* ---------- Settings ---------- */
+.settings-grid { display: flex; flex-direction: column; gap: 20px; max-width: 640px; }
+.settings-section h3 { margin-bottom: 12px; }
+.settings-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.settings-email, .settings-hint { margin-bottom: 8px; }
+.settings-section input {
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 138, 76, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  font-family: inherit;
+}
+.saved-note { color: var(--green); font-size: 14px; font-weight: 700; }
+
+.bg-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.bg-tile {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--text);
+  font-family: inherit; font-weight: 600;
+  cursor: pointer;
+}
+.bg-tile.selected { border-color: var(--accent); }
+.bg-swatch { display: block; height: 56px; border-radius: 10px; }
+.bg-auto { background: linear-gradient(90deg, #ffc3a0, #bfe6ff, #ff9d7a, #2d2358); }
+
+/* ---------- Dark theme ---------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Bright scenes get dimmed so light text stays readable */
+[data-theme="dark"] .bg-layer.bg-sunrise,
+[data-theme="dark"] .bg-layer.bg-afternoon,
+[data-theme="dark"] .bg-layer.bg-sunset,
+[data-theme="dark"] .bg-layer.bg-break,
+[data-theme="dark"] .bg-layer.bg-celebrate {
+  filter: brightness(0.5);
+}
+
+[data-theme="dark"] input:not(.note-title-input),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+[data-theme="dark"] .chip:not(.selected) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+[data-theme="dark"] .bg-tile { background: rgba(255, 255, 255, 0.08); }

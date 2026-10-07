@@ -9,6 +9,7 @@ const links = [
   { to: "/focus", icon: "⏱️", label: "Focus" },
   { to: "/notes", icon: "📝", label: "Notes" },
   { to: "/analytics", icon: "📊", label: "Analytics" },
+  { to: "/settings", icon: "⚙️", label: "Settings" },
 ];
 
 export default function Sidebar() {

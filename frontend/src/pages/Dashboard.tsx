@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSessions } from "../hooks/useSessions";
+import { useSettings } from "../hooks/useSettings";
 import { useTasks } from "../hooks/useTasks";
 import { setTaskStatus } from "../services/tasks";
 import { computeStats, sessionDate } from "../utils/stats";
@@ -10,7 +11,6 @@ import { formatDuration } from "../utils/time";
 import TaskRow from "../components/TaskRow";
 import TodaysPlanCard from "../components/TodaysPlanCard";
 
-const DAILY_GOAL_MINUTES = 120;
 const RING_RADIUS = 54;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
@@ -23,6 +23,7 @@ function greeting() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const { sessions } = useSessions(500);
   const { tasks } = useTasks();
   const stats = useMemo(() => computeStats(sessions), [sessions]);
@@ -32,7 +33,7 @@ export default function Dashboard() {
   );
 
   const name = user?.displayName?.split(" ")[0] ?? "there";
-  const goalSeconds = DAILY_GOAL_MINUTES * 60;
+  const goalSeconds = settings.dailyGoalMinutes * 60;
   const percent = Math.min(100, Math.round((stats.todaySeconds / goalSeconds) * 100));
   const maxDay = Math.max(...stats.week.map((d) => d.seconds), 1);
   const maxSubject = Math.max(...stats.bySubject.map((s) => s.seconds), 1);
@@ -57,6 +58,8 @@ export default function Dashboard() {
             Start focus
           </Link>
         </section>
+
+        {/* Today's plan */}
         <TodaysPlanCard />
 
         {/* Up next (tasks) */}
