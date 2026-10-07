@@ -50,3 +50,18 @@ export interface Task {
   createdAt?: Timestamp | null;
   completedAt?: Timestamp | null;
 }
+
+export type PlanRepeat = "none" | "daily" | "weekdays" | "weekly";
+
+export interface Plan {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  subjectEmoji: string;
+  topic: string;
+  date: string; // first day, "YYYY-MM-DD"
+  startTime: string; // "HH:MM" (24-hour)
+  durationMinutes: number;
+  repeat: PlanRepeat;
+  createdAt?: Timestamp | null;
+}

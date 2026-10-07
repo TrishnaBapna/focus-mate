@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import NoteEditor from "./pages/NoteEditor";
 import Notes from "./pages/Notes";
 import Placeholder from "./pages/Placeholder";
+import Planner from "./pages/Planner";
 import Subjects from "./pages/Subjects";
 import Tasks from "./pages/Tasks";
 
@@ -31,7 +32,7 @@ export default function App() {
           <Route path="/focus" element={<Focus />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/notes/:id" element={<NoteEditor />} />
-          <Route path="/planner" element={<Placeholder title="Planner" />} />
+          <Route path="/planner" element={<Planner />} />
           <Route path="/analytics" element={<Placeholder title="Analytics" />} />
         </Route>
       </Route>
