@@ -6,6 +6,7 @@ const links = [
   { to: "/tasks", icon: "✅", label: "Tasks" },
   { to: "/subjects", icon: "📚", label: "Subjects" },
   { to: "/planner", icon: "📅", label: "Planner" },
+  { to: "/exams", icon: "🎓", label: "Exams" },
   { to: "/focus", icon: "⏱️", label: "Focus" },
   { to: "/notes", icon: "📝", label: "Notes" },
   { to: "/analytics", icon: "📊", label: "Analytics" },

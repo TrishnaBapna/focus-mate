@@ -12,6 +12,7 @@ const mainLinks = [
 const moreLinks = [
   { to: "/tasks", icon: "✅", label: "Tasks" },
   { to: "/subjects", icon: "📚", label: "Subjects" },
+  { to: "/exams", icon: "🎓", label: "Exams" },
   { to: "/analytics", icon: "📊", label: "Analytics" },
   { to: "/settings", icon: "⚙️", label: "Settings" },
 ];

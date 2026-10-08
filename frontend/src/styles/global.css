@@ -631,3 +631,54 @@ a { color: var(--accent); }
   /* 16px text stops iPhones from zooming in when you tap a field */
   input, select, textarea { font-size: 16px !important; }
 }
+
+/* ---------- Exams ---------- */
+.exam-form { max-width: 760px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }
+.exam-form input, .exam-form select {
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 138, 76, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  font-family: inherit;
+}
+.exam-form .exam-name-input { flex: 1; min-width: 220px; }
+
+.exam-list { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.past-title { margin: 28px 0 12px; color: var(--muted); }
+.exam-card { display: flex; flex-direction: column; gap: 12px; }
+.exam-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.exam-name { font-size: 20px; font-weight: 800; }
+.align-start { align-self: flex-start; }
+
+/* Countdown badges get bigger and louder as the exam gets closer */
+.countdown-badge { padding: 8px 16px; border-radius: 999px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap; }
+.countdown-badge.small { padding: 4px 12px; font-size: 13px; }
+.cd-calm { background: #5fcf80; color: #11331c; }
+.cd-soon { background: #ffb26b; color: #3b2a24; font-size: 16px; }
+.cd-urgent { background: #ef476f; color: white; font-size: 18px; animation: pulse 2s ease-in-out infinite; }
+.countdown-badge.small.cd-urgent { font-size: 14px; }
+.cd-past { background: rgba(150, 150, 150, 0.25); color: var(--muted); }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .cd-urgent { animation: none; } }
+
+.syllabus { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.syllabus li { display: flex; align-items: center; gap: 10px; }
+.syllabus li.done .syllabus-title { text-decoration: line-through; color: var(--muted); }
+.syllabus-title { flex: 1; }
+.topic-form { display: flex; gap: 8px; }
+.topic-form input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 138, 76, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+/* Dashboard exam card */
+.exam-mini { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid rgba(255, 138, 76, 0.12); }
+.exam-mini:last-of-type { border-bottom: none; }
+.exam-mini-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.exam-alert { box-shadow: 0 0 0 3px rgba(239, 71, 111, 0.45), var(--shadow); }
