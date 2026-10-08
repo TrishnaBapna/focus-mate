@@ -30,6 +30,8 @@ export interface Note {
   subjectEmoji: string;
   topic: string;
   sessionId: string | null;
+  type?: "typed" | "handwritten"; // older notes have no type = typed
+  strokesJson?: string; // pen strokes, for handwritten notes
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }

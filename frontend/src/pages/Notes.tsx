@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import HandwritingThumb from "../components/HandwritingThumb";
 import { useNotes } from "../hooks/useNotes";
 import { useSubjects } from "../hooks/useSubjects";
 
@@ -8,6 +9,7 @@ export default function Notes() {
   const { subjects } = useSubjects();
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
+  const [chooserOpen, setChooserOpen] = useState(false);
 
   const term = search.trim().toLowerCase();
   const filtered = notes.filter((n) => {
@@ -22,10 +24,41 @@ export default function Notes() {
     <>
       <div className="notes-header">
         <h1>Notes 📝</h1>
-        <Link to="/notes/new" className="btn">
+        <button className="btn" onClick={() => setChooserOpen(true)}>
           + New note
-        </Link>
+        </button>
       </div>
+
+      {chooserOpen && (
+        <div className="modal-backdrop" onClick={() => setChooserOpen(false)}>
+          <div className="card modal" onClick={(e) => e.stopPropagation()}>
+            <h3>How do you want to create your note?</h3>
+            <div className="chooser-grid">
+              <Link to="/notes/new" className="chooser-option">
+                <span className="chooser-icon">⌨️</span>
+                Type
+              </Link>
+              <Link to="/notes/new?type=handwritten" className="chooser-option">
+                <span className="chooser-icon">✍️</span>
+                Handwrite
+              </Link>
+              <div className="chooser-option disabled">
+                <span className="chooser-icon">📷</span>
+                Scan
+                <small>Coming soon</small>
+              </div>
+              <div className="chooser-option disabled">
+                <span className="chooser-icon">🎙️</span>
+                Voice
+                <small>Coming soon</small>
+              </div>
+            </div>
+            <button className="link-btn" onClick={() => setChooserOpen(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <input
         className="search-input"
@@ -66,13 +99,21 @@ export default function Notes() {
         <div className="notes-grid">
           {filtered.map((n) => {
             const date = n.updatedAt ? n.updatedAt.toDate() : new Date();
+            const handwritten = n.type === "handwritten";
             return (
               <Link key={n.id} to={`/notes/${n.id}`} className="card note-card">
-                <h3>{n.title || "Untitled"}</h3>
-                <p className="note-snippet">
-                  {n.content.slice(0, 140)}
-                  {n.content.length > 140 && "…"}
-                </p>
+                <h3>
+                  {handwritten && "✍️ "}
+                  {n.title || "Untitled"}
+                </h3>
+                {handwritten ? (
+                  <HandwritingThumb strokesJson={n.strokesJson} />
+                ) : (
+                  <p className="note-snippet">
+                    {n.content.slice(0, 140)}
+                    {n.content.length > 140 && "…"}
+                  </p>
+                )}
                 <div className="note-meta">
                   <span>
                     {n.subjectName ? `${n.subjectEmoji} ${n.subjectName}` : "No subject"}

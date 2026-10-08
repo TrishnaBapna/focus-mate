@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import HandwrittenEditor from "../components/HandwrittenEditor";
 import { useAuth } from "../hooks/useAuth";
 import { useNotes } from "../hooks/useNotes";
 import { useSubjects } from "../hooks/useSubjects";
@@ -30,6 +31,7 @@ function Editor({ note }: { note?: Note }) {
 
     const subject = subjects.find((s) => s.id === subjectId);
     const data = {
+      type: "typed" as const,
       title: title.trim(),
       content,
       subjectId,
@@ -115,6 +117,7 @@ function Editor({ note }: { note?: Note }) {
 
 export default function NoteEditor() {
   const { id } = useParams();
+  const [params] = useSearchParams();
   const { notes, loading } = useNotes();
   const isNew = id === "new";
   const note = isNew ? undefined : notes.find((n) => n.id === id);
@@ -129,5 +132,11 @@ export default function NoteEditor() {
     );
   }
 
-  return <Editor key={note?.id ?? "new"} note={note} />;
+  const handwritten = note ? note.type === "handwritten" : params.get("type") === "handwritten";
+
+  return handwritten ? (
+    <HandwrittenEditor key={note?.id ?? "new"} note={note} />
+  ) : (
+    <Editor key={note?.id ?? "new"} note={note} />
+  );
 }
