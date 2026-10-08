@@ -3,13 +3,13 @@ import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TimeBackground from "./components/TimeBackground";
 import Achievements from "./pages/Achievements";
+import Analytics from "./pages/Analytics";
 import Dashboard from "./pages/Dashboard";
 import Exams from "./pages/Exams";
 import Focus from "./pages/Focus";
 import Login from "./pages/Login";
 import NoteEditor from "./pages/NoteEditor";
 import Notes from "./pages/Notes";
-import Placeholder from "./pages/Placeholder";
 import Planner from "./pages/Planner";
 import Settings from "./pages/Settings";
 import Subjects from "./pages/Subjects";
@@ -38,7 +38,7 @@ export default function App() {
           <Route path="/notes" element={<Notes />} />
           <Route path="/notes/:id" element={<NoteEditor />} />
           <Route path="/achievements" element={<Achievements />} />
-          <Route path="/analytics" element={<Placeholder title="Analytics" />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

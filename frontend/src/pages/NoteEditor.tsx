@@ -1,5 +1,6 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import HandwrittenEditor from "../components/HandwrittenEditor";
+import ScanEditor from "../components/ScanEditor";
 import TypedEditor from "../components/TypedEditor";
 import VoiceEditor from "../components/VoiceEditor";
 import { useNotes } from "../hooks/useNotes";
@@ -27,5 +28,6 @@ export default function NoteEditor() {
 
   if (kind === "handwritten") return <HandwrittenEditor key={key} note={note} />;
   if (kind === "voice") return <VoiceEditor key={key} note={note} />;
+  if (kind === "scan") return <ScanEditor key={key} note={note} />;
   return <TypedEditor key={key} note={note} />;
 }

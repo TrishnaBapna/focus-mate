@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import HandwritingThumb from "../components/HandwritingThumb";
+import NewNoteChooser from "../components/NewNoteChooser";
+import NoteCard from "../components/NoteCard";
 import { useNotes } from "../hooks/useNotes";
 import { useSubjects } from "../hooks/useSubjects";
-import { formatClock } from "../utils/time";
 
 export default function Notes() {
   const { notes, loading } = useNotes();
@@ -30,35 +29,7 @@ export default function Notes() {
         </button>
       </div>
 
-      {chooserOpen && (
-        <div className="modal-backdrop" onClick={() => setChooserOpen(false)}>
-          <div className="card modal" onClick={(e) => e.stopPropagation()}>
-            <h3>How do you want to create your note?</h3>
-            <div className="chooser-grid">
-              <Link to="/notes/new" className="chooser-option">
-                <span className="chooser-icon">⌨️</span>
-                Type
-              </Link>
-              <Link to="/notes/new?type=handwritten" className="chooser-option">
-                <span className="chooser-icon">✍️</span>
-                Handwrite
-              </Link>
-              <div className="chooser-option disabled">
-                <span className="chooser-icon">📷</span>
-                Scan
-                <small>Coming soon</small>
-              </div>
-              <Link to="/notes/new?type=voice" className="chooser-option">
-                <span className="chooser-icon">🎙️</span>
-                Voice
-              </Link>
-            </div>
-            <button className="link-btn" onClick={() => setChooserOpen(false)}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      {chooserOpen && <NewNoteChooser onClose={() => setChooserOpen(false)} />}
 
       <input
         className="search-input"
@@ -97,45 +68,9 @@ export default function Notes() {
         </p>
       ) : (
         <div className="notes-grid">
-          {filtered.map((n) => {
-            const date = n.updatedAt ? n.updatedAt.toDate() : new Date();
-            const handwritten = n.type === "handwritten";
-            const voice = n.type === "voice";
-            return (
-              <Link key={n.id} to={`/notes/${n.id}`} className="card note-card">
-                <h3>
-                  {handwritten && "✍️ "}
-                  {voice && "🎙️ "}
-                  {n.title || "Untitled"}
-                </h3>
-
-                {handwritten ? (
-                  <HandwritingThumb strokesJson={n.strokesJson} />
-                ) : (
-                  <p className="note-snippet">
-                    {voice && (
-                      <span className="voice-length">
-                        🎵 {formatClock((n.audioSeconds ?? 0) * 1000)}{" "}
-                      </span>
-                    )}
-                    {n.content.slice(0, 140)}
-                    {n.content.length > 140 && "…"}
-                  </p>
-                )}
-
-                <div className="note-meta">
-                  <span>
-                    {n.subjectName ? `${n.subjectEmoji} ${n.subjectName}` : "No subject"}
-                    {n.topic && ` · ${n.topic}`}
-                  </span>
-                  <span>
-                    {n.sessionId && "🔗 "}
-                    {date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+          {filtered.map((n) => (
+            <NoteCard key={n.id} note={n} />
+          ))}
         </div>
       )}
     </>
