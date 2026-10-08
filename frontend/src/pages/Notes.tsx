@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import HandwritingThumb from "../components/HandwritingThumb";
 import { useNotes } from "../hooks/useNotes";
 import { useSubjects } from "../hooks/useSubjects";
+import { formatClock } from "../utils/time";
 
 export default function Notes() {
   const { notes, loading } = useNotes();
@@ -47,11 +48,10 @@ export default function Notes() {
                 Scan
                 <small>Coming soon</small>
               </div>
-              <div className="chooser-option disabled">
+              <Link to="/notes/new?type=voice" className="chooser-option">
                 <span className="chooser-icon">🎙️</span>
                 Voice
-                <small>Coming soon</small>
-              </div>
+              </Link>
             </div>
             <button className="link-btn" onClick={() => setChooserOpen(false)}>
               Cancel
@@ -100,20 +100,29 @@ export default function Notes() {
           {filtered.map((n) => {
             const date = n.updatedAt ? n.updatedAt.toDate() : new Date();
             const handwritten = n.type === "handwritten";
+            const voice = n.type === "voice";
             return (
               <Link key={n.id} to={`/notes/${n.id}`} className="card note-card">
                 <h3>
                   {handwritten && "✍️ "}
+                  {voice && "🎙️ "}
                   {n.title || "Untitled"}
                 </h3>
+
                 {handwritten ? (
                   <HandwritingThumb strokesJson={n.strokesJson} />
                 ) : (
                   <p className="note-snippet">
+                    {voice && (
+                      <span className="voice-length">
+                        🎵 {formatClock((n.audioSeconds ?? 0) * 1000)}{" "}
+                      </span>
+                    )}
                     {n.content.slice(0, 140)}
                     {n.content.length > 140 && "…"}
                   </p>
                 )}
+
                 <div className="note-meta">
                   <span>
                     {n.subjectName ? `${n.subjectEmoji} ${n.subjectName}` : "No subject"}

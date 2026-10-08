@@ -24,14 +24,17 @@ export interface FocusSession {
 export interface Note {
   id: string;
   title: string;
-  content: string;
+  content: string; // typed text, or the transcript of a voice note
   subjectId: string;
   subjectName: string;
   subjectEmoji: string;
   topic: string;
   sessionId: string | null;
-  type?: "typed" | "handwritten"; // older notes have no type = typed
+  type?: "typed" | "handwritten" | "voice"; // older notes have no type = typed
   strokesJson?: string; // pen strokes, for handwritten notes
+  audioId?: string; // id of the recording in the media area, for voice notes
+  audioMime?: string;
+  audioSeconds?: number;
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }

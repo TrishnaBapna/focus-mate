@@ -816,3 +816,40 @@ a { color: var(--accent); }
 @media (max-width: 768px) {
   .draw-toolbar { position: static; }
 }
+
+/* ---------- Voice notes ---------- */
+.voice-recorder {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 138, 76, 0.1);
+}
+.record-btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 999px;
+  background: #ef476f;
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(239, 71, 111, 0.4);
+}
+.recording-row { display: flex; align-items: center; gap: 12px; font-size: 20px; flex-wrap: wrap; }
+.rec-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ef476f;
+  animation: rec-blink 1s ease-in-out infinite;
+}
+@keyframes rec-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.audio-el { width: 100%; max-width: 480px; }
+.voice-hint { font-size: 13px; }
+.voice-text { min-height: 180px; }
+.voice-length { font-weight: 700; color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
