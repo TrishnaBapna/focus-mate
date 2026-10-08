@@ -8,6 +8,9 @@ export interface FocusResult {
   seconds: number;
   status: SaveStatus;
   sessionId?: string;
+  strict?: boolean;
+  leaves?: number;
+  awaySeconds?: number;
 }
 
 export interface FocusContextValue {
@@ -25,6 +28,8 @@ export interface FocusContextValue {
   setFocusMinutes: (n: number) => void;
   breakMinutes: number;
   setBreakMinutes: (n: number) => void;
+  strict: boolean;
+  setStrict: (v: boolean) => void;
 
   subject: Subject | undefined;
   result: FocusResult | null;
@@ -33,6 +38,14 @@ export interface FocusContextValue {
   clockText: string;
   progress: number;
   hasTarget: boolean;
+  elapsedSeconds: number;
+
+  // Strict mode
+  strictActive: boolean; // a strict focus session is running right now
+  awayCount: number;
+  awaySeconds: number;
+  awayNotice: number | null; // seconds away, shown briefly after coming back
+  dismissAwayNotice: () => void;
 
   startFocus: () => void;
   startBreak: () => void;

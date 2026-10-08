@@ -18,6 +18,9 @@ export interface FocusSession {
   goal: string;
   mode: SessionMode;
   durationSeconds: number;
+  strict?: boolean; // true for strict-mode sessions
+  leaves?: number; // how many times the tab was left (strict mode only)
+  awaySeconds?: number; // total time away from the tab (strict mode only)
   completedAt?: Timestamp | null;
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "./useAuth";
 import { useSubjects } from "./useSubjects";
 import { useTimer } from "./useTimer";
@@ -14,6 +14,7 @@ import { playChime } from "../utils/chime";
 import type { SessionMode } from "../types";
 
 const MIN_SAVE_SECONDS = 60;
+const MIN_AWAY_SECONDS = 3; // ignore quick flickers (like a fast Cmd+Tab)
 
 export default function FocusProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -26,9 +27,17 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
   const [goal, setGoal] = useState("");
   const [focusMinutes, setFocusMinutes] = useState(25);
   const [breakMinutes, setBreakMinutes] = useState(5);
+  const [strict, setStrict] = useState(false);
   const [result, setResult] = useState<FocusResult | null>(null);
 
+  // Time spent away from the tab during a strict session
+  const [away, setAway] = useState({ count: 0, seconds: 0 });
+  const [awayNotice, setAwayNotice] = useState<number | null>(null);
+  const awayRef = useRef({ count: 0, seconds: 0 });
+  const awayStartRef = useRef<number | null>(null);
+
   const subject = subjects.find((s) => s.id === subjectId);
+  const strictActive = phase === "focus" && strict;
 
   const targetMs =
     phase === "break"
@@ -39,8 +48,21 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
 
   async function finishFocus(totalMs: number) {
     const seconds = Math.round(totalMs / 1000);
+    const wasStrict = strict;
     let status: SaveStatus = "short";
     let sessionId: string | undefined;
+
+    // Count time away that was still going when the session ended
+    let leaves = awayRef.current.count;
+    let awaySeconds = awayRef.current.seconds;
+    if (awayStartRef.current !== null) {
+      const secs = Math.round((Date.now() - awayStartRef.current) / 1000);
+      awayStartRef.current = null;
+      if (secs >= MIN_AWAY_SECONDS) {
+        leaves += 1;
+        awaySeconds += secs;
+      }
+    }
 
     if (user && subject && seconds >= MIN_SAVE_SECONDS) {
       try {
@@ -52,6 +74,7 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
           goal: goal.trim(),
           mode,
           durationSeconds: seconds,
+          ...(wasStrict ? { strict: true, leaves, awaySeconds } : {}),
         });
         sessionId = ref.id;
         status = "saved";
@@ -61,7 +84,12 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    setResult({ seconds, status, sessionId });
+    setResult({
+      seconds,
+      status,
+      sessionId,
+      ...(wasStrict ? { strict: true, leaves, awaySeconds } : {}),
+    });
     setPhase("focusDone");
   }
 
@@ -73,9 +101,20 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
 
   function startFocus() {
     if (!subject) return;
+
+    awayRef.current = { count: 0, seconds: 0 };
+    awayStartRef.current = null;
+    setAway(awayRef.current);
+    setAwayNotice(null);
+
     timer.reset();
     setPhase("focus");
     timer.start();
+
+    // Must happen inside the click that started the session
+    if (strict) {
+      Promise.resolve(document.documentElement.requestFullscreen?.()).catch(() => {});
+    }
   }
 
   function startBreak() {
@@ -119,6 +158,74 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [phase]);
 
+  // Strict mode: notice when the tab is left, and when you come back
+  useEffect(() => {
+    if (!strictActive) return;
+
+    function onVisibility() {
+      if (document.hidden) {
+        awayStartRef.current = Date.now();
+        return;
+      }
+      if (awayStartRef.current === null) return;
+      const secs = Math.round((Date.now() - awayStartRef.current) / 1000);
+      awayStartRef.current = null;
+      if (secs >= MIN_AWAY_SECONDS) {
+        awayRef.current = {
+          count: awayRef.current.count + 1,
+          seconds: awayRef.current.seconds + secs,
+        };
+        setAway(awayRef.current);
+        setAwayNotice(secs);
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [strictActive]);
+
+  // Hide the "welcome back" note after a few seconds
+  useEffect(() => {
+    if (awayNotice === null) return;
+    const id = window.setTimeout(() => setAwayNotice(null), 8000);
+    return () => window.clearTimeout(id);
+  }, [awayNotice]);
+
+  // Strict mode: keep the screen awake, and leave full screen when it ends
+  useEffect(() => {
+    if (!strictActive) return;
+
+    let lock: WakeLockSentinel | null = null;
+    let cancelled = false;
+
+    async function acquire() {
+      try {
+        if (!("wakeLock" in navigator)) return;
+        const sentinel = await navigator.wakeLock.request("screen");
+        if (cancelled) void sentinel.release();
+        else lock = sentinel;
+      } catch {
+        // not allowed right now (for example, low battery); that's fine
+      }
+    }
+
+    function onVisible() {
+      if (!document.hidden) void acquire();
+    }
+
+    void acquire();
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      if (lock) void lock.release();
+      if (document.fullscreenElement) {
+        Promise.resolve(document.exitFullscreen()).catch(() => {});
+      }
+    };
+  }, [strictActive]);
+
   return (
     <FocusContext.Provider
       value={{
@@ -135,12 +242,20 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
         setFocusMinutes,
         breakMinutes,
         setBreakMinutes,
+        strict,
+        setStrict,
         subject,
         result,
         running: timer.running,
         clockText,
         progress,
         hasTarget: targetMs !== null,
+        elapsedSeconds: Math.floor(timer.elapsedMs / 1000),
+        strictActive,
+        awayCount: away.count,
+        awaySeconds: away.seconds,
+        awayNotice,
+        dismissAwayNotice: () => setAwayNotice(null),
         startFocus,
         startBreak,
         backToSetup,
