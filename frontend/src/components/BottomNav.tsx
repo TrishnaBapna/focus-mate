@@ -13,6 +13,7 @@ const moreLinks = [
   { to: "/tasks", icon: "✅", label: "Tasks" },
   { to: "/subjects", icon: "📚", label: "Subjects" },
   { to: "/exams", icon: "🎓", label: "Exams" },
+  { to: "/achievements", icon: "🏆", label: "Achievements" },
   { to: "/analytics", icon: "📊", label: "Analytics" },
   { to: "/settings", icon: "⚙️", label: "Settings" },
 ];

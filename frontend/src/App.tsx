@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TimeBackground from "./components/TimeBackground";
+import Achievements from "./pages/Achievements";
 import Dashboard from "./pages/Dashboard";
 import Exams from "./pages/Exams";
 import Focus from "./pages/Focus";
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/focus" element={<Focus />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/notes/:id" element={<NoteEditor />} />
+          <Route path="/achievements" element={<Achievements />} />
           <Route path="/analytics" element={<Placeholder title="Analytics" />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

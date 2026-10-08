@@ -9,6 +9,7 @@ const links = [
   { to: "/exams", icon: "🎓", label: "Exams" },
   { to: "/focus", icon: "⏱️", label: "Focus" },
   { to: "/notes", icon: "📝", label: "Notes" },
+  { to: "/achievements", icon: "🏆", label: "Achievements" },
   { to: "/analytics", icon: "📊", label: "Analytics" },
   { to: "/settings", icon: "⚙️", label: "Settings" },
 ];

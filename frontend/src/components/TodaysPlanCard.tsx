@@ -3,6 +3,7 @@ import { usePlans } from "../hooks/usePlans";
 import { dayKey } from "../utils/stats";
 import { endTime, formatTime, occursOn } from "../utils/plans";
 import ExamCountdownCard from "./ExamCountdownCard";
+import LevelCard from "./LevelCard";
 
 export default function TodaysPlanCard() {
   const { plans } = usePlans();
@@ -38,6 +39,8 @@ export default function TodaysPlanCard() {
           Open planner →
         </Link>
       </section>
+
+      <LevelCard />
     </>
   );
 }

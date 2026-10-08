@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import AchievementsProvider from "../hooks/AchievementsProvider";
 import FocusProvider from "../hooks/FocusProvider";
 import SettingsProvider from "../hooks/SettingsProvider";
 import AppBackground from "./AppBackground";
@@ -10,15 +11,17 @@ export default function Layout() {
   return (
     <SettingsProvider>
       <FocusProvider>
-        <AppBackground />
-        <div className="app-shell">
-          <Sidebar />
-          <main className="app-main">
-            <Outlet />
-          </main>
-        </div>
-        <BottomNav />
-        <MiniTimer />
+        <AchievementsProvider>
+          <AppBackground />
+          <div className="app-shell">
+            <Sidebar />
+            <main className="app-main">
+              <Outlet />
+            </main>
+          </div>
+          <BottomNav />
+          <MiniTimer />
+        </AchievementsProvider>
       </FocusProvider>
     </SettingsProvider>
   );
