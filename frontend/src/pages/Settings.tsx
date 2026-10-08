@@ -3,6 +3,7 @@ import { updateProfile } from "firebase/auth";
 import { useAuth } from "../hooks/useAuth";
 import { useSettings } from "../hooks/useSettings";
 import { logout } from "../services/auth";
+import InstallCard from "../components/InstallCard";
 import type { BackgroundChoice, ThemeChoice } from "../types/settings";
 
 const THEMES: { id: ThemeChoice; label: string }[] = [
@@ -138,6 +139,8 @@ export default function Settings() {
             ))}
           </div>
         </section>
+
+        <InstallCard />
 
         <section className="card settings-section">
           <h3>Account</h3>
