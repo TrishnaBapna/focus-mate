@@ -5,6 +5,7 @@ import TimeBackground from "./components/TimeBackground";
 import Achievements from "./pages/Achievements";
 import Analytics from "./pages/Analytics";
 import Dashboard from "./pages/Dashboard";
+import DeckPage from "./pages/DeckPage";
 import Exams from "./pages/Exams";
 import Focus from "./pages/Focus";
 import Login from "./pages/Login";
@@ -12,6 +13,7 @@ import NoteEditor from "./pages/NoteEditor";
 import Notes from "./pages/Notes";
 import Planner from "./pages/Planner";
 import Settings from "./pages/Settings";
+import Study from "./pages/Study";
 import Subjects from "./pages/Subjects";
 import Tasks from "./pages/Tasks";
 
@@ -37,6 +39,8 @@ export default function App() {
           <Route path="/focus" element={<Focus />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/notes/:id" element={<NoteEditor />} />
+          <Route path="/study" element={<Study />} />
+          <Route path="/study/:deckId" element={<DeckPage />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />

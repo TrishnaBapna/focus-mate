@@ -4,6 +4,7 @@ import { dayKey } from "../utils/stats";
 import { endTime, formatTime, occursOn } from "../utils/plans";
 import ExamCountdownCard from "./ExamCountdownCard";
 import LevelCard from "./LevelCard";
+import StudyDueCard from "./StudyDueCard";
 import SuggestionsCard from "./SuggestionsCard";
 
 export default function TodaysPlanCard() {
@@ -42,6 +43,8 @@ export default function TodaysPlanCard() {
           Open planner →
         </Link>
       </section>
+
+      <StudyDueCard />
 
       <LevelCard />
     </>
