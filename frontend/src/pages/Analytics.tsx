@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import WeeklyReportCard from "../components/WeeklyReportCard";
 import { useSessions } from "../hooks/useSessions";
 import { computeAnalytics, hourLabel, type Range } from "../utils/analytics";
 import { formatDuration } from "../utils/time";
@@ -41,6 +42,8 @@ export default function Analytics() {
       {!loading && sessions.length === 0 && (
         <p className="empty-note">Finish a focus session and your analytics will appear here ✨</p>
       )}
+
+      <WeeklyReportCard />
 
       <div className="stat-grid">
         <div className="card stat-card">

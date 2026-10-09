@@ -65,7 +65,7 @@ export default function AchievementsProvider({ children }: { children: ReactNode
 
   return (
     <AchievementsContext.Provider
-      value={{ progress, ready, unlockedAt: stored?.unlocked ?? {} }}
+      value={{ progress, ready, unlockedAt: stored?.unlocked ?? {}, sessions, tasks }}
     >
       {children}
       <div className="toast-stack">

@@ -4,6 +4,7 @@ import { dayKey } from "../utils/stats";
 import { endTime, formatTime, occursOn } from "../utils/plans";
 import ExamCountdownCard from "./ExamCountdownCard";
 import LevelCard from "./LevelCard";
+import SuggestionsCard from "./SuggestionsCard";
 
 export default function TodaysPlanCard() {
   const { plans } = usePlans();
@@ -14,6 +15,8 @@ export default function TodaysPlanCard() {
 
   return (
     <>
+      <SuggestionsCard />
+
       <ExamCountdownCard />
 
       <section className="card">

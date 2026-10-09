@@ -1013,3 +1013,26 @@ a { color: var(--accent); }
 .flashcard.flipped { background: #fff1d6; }
 .fc-label { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
 .fc-text { font-size: 18px; font-weight: 700; }
+
+/* ---------- Suggestions and weekly report ---------- */
+.suggestion-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 138, 76, 0.12);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+  text-decoration: none;
+}
+a.suggestion:hover { background: rgba(255, 138, 76, 0.22); }
+.suggestion-icon { font-size: 20px; line-height: 1.2; }
+
+.report-card { max-width: 760px; margin-bottom: 20px; }
+.report-total { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.report-lines { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.report-suggestion { padding: 12px 14px; border-radius: 12px; background: rgba(255, 138, 76, 0.12); }
+.report-suggestion p { margin-top: 4px; line-height: 1.5; }
