@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AiSettingsCard from "../components/AiSettingsCard";
 import { updateProfile } from "firebase/auth";
 import { useAuth } from "../hooks/useAuth";
 import { useSettings } from "../hooks/useSettings";
@@ -139,6 +140,8 @@ export default function Settings() {
             ))}
           </div>
         </section>
+
+        <AiSettingsCard />
 
         <InstallCard />
 

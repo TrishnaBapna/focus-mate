@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import AiToolsPanel from "./AiToolsPanel";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useRecorder } from "../hooks/useRecorder";
@@ -181,6 +182,11 @@ export default function VoiceEditor({ note }: { note?: Note }) {
         placeholder="Transcript / notes…"
         value={text}
         onChange={(e) => setText(e.target.value)}
+      />
+
+      <AiToolsPanel
+        text={text}
+        onInsert={(t) => setText((c) => (c ? c + "\n\n" : "") + t)}
       />
 
       {error && <p className="auth-error">{error}</p>}

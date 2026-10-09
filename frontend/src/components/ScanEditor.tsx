@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import AiToolsPanel from "./AiToolsPanel";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useMediaUrl } from "../hooks/useMediaUrl";
@@ -252,6 +253,11 @@ export default function ScanEditor({ note }: { note?: Note }) {
       <p className="muted voice-hint">
         Works best on printed text. Handwriting is hit and miss, so check the result.
       </p>
+
+      <AiToolsPanel
+        text={text}
+        onInsert={(t) => setText((c) => (c ? c + "\n\n" : "") + t)}
+      />
 
       {error && <p className="auth-error">{error}</p>}
 
