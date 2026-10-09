@@ -1,75 +1,82 @@
-# React + TypeScript + Vite
+# Focus Mate 🎓⏱️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A cozy study app that helps students stay focused, organized, and consistent with their study goals.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+* **Focus timer:** Timer, stopwatch, Pomodoro sessions, and custom breaks.
+* **Study planner:** Organize study blocks and view your calendar.
+* **Tasks:** Track assignments, deadlines, and priorities.
+* **Exam countdowns:** Keep track of upcoming exams and syllabus progress.
+* **Notes:** Type, handwrite, scan printed text, and record voice notes.
+* **Analytics:** Review study time, weekly progress, and subject-wise activity.
+* **Achievements:** Earn XP, unlock badges, and build study streaks.
+* **Themes:** Choose light mode, dark mode, or system settings.
+* **Mobile support:** Use a responsive interface and installable PWA.
 
-## React Compiler
+## Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+* React and TypeScript
+* Vite and React Router
+* CSS
+* Firebase Authentication
+* Cloud Firestore
+* Firebase Hosting
+* Tesseract.js for browser-based OCR
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Requirements
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+* Node.js 18 or newer
+* A Firebase project
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Install dependencies
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Open a terminal and run:
 
+```bash
+cd frontend
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+### Configure Firebase
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Use `frontend/.env.example` as a template to create `frontend/.env.local`. Fill in the configuration values from your Firebase web app.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Enable Email/Password authentication and set up Cloud Firestore in the Firebase console. Review and publish the security rules from `firestore.rules`.
 
+### Run locally
+
+```bash
+npm run dev
 ```
+
+Open the local URL printed in the terminal, usually `http://localhost:5173`.
+
+### Build for production
+
+```bash
+npm run build
+```
+
+## Screenshots
+
+Screenshots can be added to `docs/screenshots/` for the dashboard, focus timer, notes, planner, analytics, and mobile layout.
+
+## Privacy and Security
+
+Firestore security rules should restrict access to each user's own data. Review all database paths and test the rules before deploying.
+
+OCR runs in the browser. Features such as microphone recording require browser permissions.
+
+## Future Improvements
+
+* AI-powered summaries, quizzes, and flashcards
+* Weekly progress reports
+* Smart study recommendations
+* Focus rooms and study challenges
+
+## Author
+
+Built by Trishna Bapna.

@@ -5,8 +5,12 @@ import { useAuth } from "../hooks/useAuth";
 import { useCards } from "../hooks/useCards";
 import { useDecks } from "../hooks/useDecks";
 import { addCards, deleteCard, deleteDeck, updateCardText } from "../services/study";
+import { describeError, withTimeout } from "../utils/errors";
 import { isDue, parseBulkCards, todayKey } from "../utils/study";
 import type { StudyCard } from "../types/study";
+
+const SLOW_MESSAGE =
+  "This is taking longer than usual. Check your internet connection. The card will be saved as soon as you're online.";
 
 function CardRow({ card, uid }: { card: StudyCard; uid: string }) {
   const [editing, setEditing] = useState(false);
@@ -58,23 +62,28 @@ export default function DeckPage() {
   const { deckId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { decks, loading } = useDecks();
-  const { cards } = useCards();
+  const { decks, loading, error: decksError } = useDecks();
+  const { cards, error: cardsError } = useCards();
 
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [addMessage, setAddMessage] = useState("");
   const [bulk, setBulk] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkMessage, setBulkMessage] = useState("");
   const [reviewing, setReviewing] = useState(false);
 
   const deck = decks.find((d) => d.id === deckId);
   const deckCards = cards.filter((c) => c.deckId === deckId);
   const due = deckCards.filter((c) => isDue(c));
+  const loadError = decksError || cardsError;
 
   if (loading) return <p>Loading…</p>;
   if (!deck || !user) {
     return (
       <section className="card">
+        {loadError && <p className="auth-error">{loadError}</p>}
         <p>Deck not found.</p>
         <Link to="/study">← Back to Study</Link>
       </section>
@@ -85,10 +94,27 @@ export default function DeckPage() {
 
   async function handleAddOne(e: FormEvent) {
     e.preventDefault();
-    if (!user || !deck || !front.trim() || !back.trim()) return;
-    await addCards(user.uid, deck.id, [{ front: front.trim(), back: back.trim() }], todayKey());
-    setFront("");
-    setBack("");
+    if (!user || !deck) return;
+    if (!front.trim() || !back.trim()) {
+      setAddMessage("Fill in both the question and the answer.");
+      return;
+    }
+
+    setAdding(true);
+    setAddMessage("");
+    try {
+      await withTimeout(
+        addCards(user.uid, deck.id, [{ front: front.trim(), back: back.trim() }], todayKey()),
+        15000
+      );
+      setFront("");
+      setBack("");
+    } catch (err) {
+      console.error("Adding a card failed", err);
+      setAddMessage(err instanceof Error && err.message === "timeout" ? SLOW_MESSAGE : describeError(err));
+    } finally {
+      setAdding(false);
+    }
   }
 
   async function handleAddBulk() {
@@ -98,11 +124,21 @@ export default function DeckPage() {
       setBulkMessage("No cards found. Write one per line like: question | answer");
       return;
     }
-    await addCards(user.uid, deck.id, parsed, todayKey());
-    setBulk("");
-    setBulkMessage(
-      `Added ${parsed.length} card${parsed.length === 1 ? "" : "s"}${skipped ? ` (${skipped} line${skipped === 1 ? "" : "s"} skipped)` : ""} ✅`
-    );
+
+    setBulkBusy(true);
+    setBulkMessage("");
+    try {
+      await withTimeout(addCards(user.uid, deck.id, parsed, todayKey()), 15000);
+      setBulk("");
+      setBulkMessage(
+        `Added ${parsed.length} card${parsed.length === 1 ? "" : "s"}${skipped ? ` (${skipped} line${skipped === 1 ? "" : "s"} skipped)` : ""} ✅`
+      );
+    } catch (err) {
+      console.error("Adding cards failed", err);
+      setBulkMessage(err instanceof Error && err.message === "timeout" ? SLOW_MESSAGE : describeError(err));
+    } finally {
+      setBulkBusy(false);
+    }
   }
 
   async function handleDeleteDeck() {
@@ -130,13 +166,16 @@ export default function DeckPage() {
         </p>
       )}
 
+      {loadError && <p className="auth-error">{loadError}</p>}
+
       <form className="card card-form" onSubmit={handleAddOne}>
         <h3>Add a card</h3>
         <input placeholder="Question" value={front} onChange={(e) => setFront(e.target.value)} />
         <textarea placeholder="Answer" value={back} onChange={(e) => setBack(e.target.value)} />
-        <button className="btn align-start" type="submit">
-          Add card
+        <button className="btn align-start" type="submit" disabled={adding}>
+          {adding ? "Adding…" : "Add card"}
         </button>
+        {addMessage && <p className="auth-error">{addMessage}</p>}
       </form>
 
       <section className="card card-form">
@@ -148,8 +187,12 @@ export default function DeckPage() {
           value={bulk}
           onChange={(e) => setBulk(e.target.value)}
         />
-        <button className="btn secondary align-start" onClick={() => void handleAddBulk()}>
-          Add all
+        <button
+          className="btn secondary align-start"
+          onClick={() => void handleAddBulk()}
+          disabled={bulkBusy}
+        >
+          {bulkBusy ? "Adding…" : "Add all"}
         </button>
         {bulkMessage && <p className="muted">{bulkMessage}</p>}
       </section>

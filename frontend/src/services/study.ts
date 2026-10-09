@@ -60,22 +60,44 @@ export function deleteCard(uid: string, id: string) {
   return deleteDoc(doc(db, "users", uid, "cards", id));
 }
 
-export function listenToDecks(uid: string, callback: (decks: Deck[]) => void) {
+export function listenToDecks(
+  uid: string,
+  callback: (decks: Deck[]) => void,
+  onError?: (err: unknown) => void
+) {
   const q = query(decksRef(uid), orderBy("createdAt"));
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Deck, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Deck, "id">) })));
+    },
+    (err) => {
+      console.error("Loading decks failed", err);
+      onError?.(err);
+    }
+  );
 }
 
-export function listenToCards(uid: string, callback: (cards: StudyCard[]) => void) {
-  return onSnapshot(cardsRef(uid), (snap) => {
-    const cards = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<StudyCard, "id">) }));
-    // Oldest first (a card that was just added has no timestamp yet, so it goes last)
-    cards.sort(
-      (a, b) =>
-        (a.createdAt?.toMillis() ?? Number.MAX_SAFE_INTEGER) -
-        (b.createdAt?.toMillis() ?? Number.MAX_SAFE_INTEGER)
-    );
-    callback(cards);
-  });
+export function listenToCards(
+  uid: string,
+  callback: (cards: StudyCard[]) => void,
+  onError?: (err: unknown) => void
+) {
+  return onSnapshot(
+    cardsRef(uid),
+    (snap) => {
+      const cards = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<StudyCard, "id">) }));
+      // Oldest first (a card that was just added has no timestamp yet, so it goes last)
+      cards.sort(
+        (a, b) =>
+          (a.createdAt?.toMillis() ?? Number.MAX_SAFE_INTEGER) -
+          (b.createdAt?.toMillis() ?? Number.MAX_SAFE_INTEGER)
+      );
+      callback(cards);
+    },
+    (err) => {
+      console.error("Loading cards failed", err);
+      onError?.(err);
+    }
+  );
 }
