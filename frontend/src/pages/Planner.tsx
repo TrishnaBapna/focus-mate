@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useExams } from "../hooks/useExams";
 import { useFocus } from "../hooks/useFocus";
 import { usePlans } from "../hooks/usePlans";
 import { useSessions } from "../hooks/useSessions";
@@ -34,6 +35,7 @@ export default function Planner() {
   const { plans } = usePlans();
   const { tasks } = useTasks();
   const { sessions } = useSessions(500);
+  const { exams } = useExams();
 
   const todayKey = dayKey(new Date());
   const [selectedKey, setSelectedKey] = useState(todayKey);
@@ -57,16 +59,20 @@ export default function Planner() {
     [tasks]
   );
 
+  const examDays = useMemo(() => new Set(exams.map((e) => e.date)), [exams]);
+
   const getMarks = (key: string) => ({
     plan: plans.some((p) => occursOn(p, key)),
     task: taskDays.has(key),
     studied: studiedDays.has(key),
+    exam: examDays.has(key),
   });
 
   const dayPlans = plans
     .filter((p) => occursOn(p, selectedKey))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
   const dayTasks = tasks.filter((t) => t.deadline === selectedKey);
+  const dayExams = exams.filter((e) => e.date === selectedKey);
   const daySessions = sessions.filter((s) => dayKey(sessionDate(s)) === selectedKey);
 
   function selectDay(key: string) {
@@ -234,6 +240,29 @@ export default function Planner() {
                 );
               })}
             </ul>
+          )}
+
+          {dayExams.length > 0 && (
+            <>
+              <h4>Exams</h4>
+              <ul className="plan-list">
+                {dayExams.map((e) => (
+                  <li key={e.id} className="plan-row">
+                    <div className="plan-main">
+                      <span className="plan-title">🎓 {e.name}</span>
+                      {e.subjectName && (
+                        <span className="task-meta">
+                          {e.subjectEmoji} {e.subjectName}
+                        </span>
+                      )}
+                    </div>
+                    <Link to="/exams" className="btn secondary small">
+                      Open
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
 
           {dayTasks.length > 0 && (

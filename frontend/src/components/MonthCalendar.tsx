@@ -4,6 +4,7 @@ export interface DayMarks {
   plan: boolean;
   task: boolean;
   studied: boolean;
+  exam?: boolean;
 }
 
 interface Props {
@@ -70,6 +71,7 @@ export default function MonthCalendar({
               <span className="dots">
                 {marks.plan && <i className="dot plan" />}
                 {marks.task && <i className="dot task" />}
+                {marks.exam && <i className="dot exam" />}
                 {marks.studied && <i className="dot studied" />}
               </span>
             </button>
@@ -80,7 +82,7 @@ export default function MonthCalendar({
       <div className="cal-footer">
         <span className="legend">
           <i className="dot plan" /> planned <i className="dot task" /> task due{" "}
-          <i className="dot studied" /> studied
+          <i className="dot exam" /> exam <i className="dot studied" /> studied
         </span>
         <button className="link-btn" onClick={onToday}>
           Today

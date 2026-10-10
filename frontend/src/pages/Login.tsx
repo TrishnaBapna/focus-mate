@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, signup } from "../services/auth";
+import { login, resetPassword, signup } from "../services/auth";
 
 function friendlyError(err: unknown) {
   const code = (err as { code?: string }).code;
@@ -13,6 +13,8 @@ function friendlyError(err: unknown) {
       return "Password must be at least 6 characters.";
     case "auth/invalid-email":
       return "Please enter a valid email.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Please wait a little and try again.";
     default:
       return "Something went wrong. Please try again.";
   }
@@ -25,11 +27,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    setInfo("");
     setBusy(true);
     try {
       if (mode === "signup") await signup(name, email, password);
@@ -40,6 +44,29 @@ export default function Login() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleReset() {
+    setError("");
+    setInfo("");
+    if (!email.trim()) {
+      setError("Type your email above first, then click “Forgot password?”.");
+      return;
+    }
+    try {
+      await resetPassword(email.trim());
+      setInfo(
+        "If there's an account for that email, a reset link is on its way. Check your spam folder too."
+      );
+    } catch (err) {
+      setError(friendlyError(err));
+    }
+  }
+
+  function switchMode() {
+    setMode(mode === "login" ? "signup" : "login");
+    setError("");
+    setInfo("");
   }
 
   return (
@@ -73,17 +100,20 @@ export default function Login() {
           required
         />
 
+        {mode === "login" && (
+          <button type="button" className="link-btn forgot" onClick={() => void handleReset()}>
+            Forgot password?
+          </button>
+        )}
+
         {error && <p className="auth-error">{error}</p>}
+        {info && <p className="saved-note">{info}</p>}
 
         <button className="btn" type="submit" disabled={busy}>
           {busy ? "Please wait…" : mode === "login" ? "Log in" : "Sign up"}
         </button>
 
-        <button
-          type="button"
-          className="link-btn"
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
-        >
+        <button type="button" className="link-btn" onClick={switchMode}>
           {mode === "login"
             ? "New here? Create an account"
             : "Already have an account? Log in"}

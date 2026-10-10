@@ -1,5 +1,6 @@
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -18,4 +19,9 @@ export function login(email: string, password: string) {
 
 export function logout() {
   return signOut(auth);
+}
+
+// Sends an email with a link to choose a new password
+export function resetPassword(email: string) {
+  return sendPasswordResetEmail(auth, email);
 }

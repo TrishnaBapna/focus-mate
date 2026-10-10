@@ -1092,3 +1092,7 @@ a.suggestion:hover { background: rgba(255, 138, 76, 0.22); }
 .study-hint { font-size: 13px; }
 
 .save-cards { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(255, 138, 76, 0.2); }
+
+/* ---------- Polish: exam dots and password reset ---------- */
+.dot.exam { background: #9d8cff; }
+.link-btn.forgot { align-self: flex-end; font-size: 13px; margin-top: -6px; }
