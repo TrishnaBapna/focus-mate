@@ -1194,14 +1194,37 @@ a.suggestion:hover { background: rgba(255, 138, 76, 0.22); }
 .app-main { max-width: none; margin: 0; width: auto; flex: 1; min-width: 0; }
 
 .home {
-  max-width: none;
-  margin: 0;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
   align-items: start;
 }
-.home .hero-card, .home > .card:has(.mini-stats), .home .home-links { grid-column: 1 / -1; }
+
+.home .hero-card,
+.home > .card:has(.mini-stats),
+.home .home-links {
+  grid-column: 1 / -1;
+}
+
+.home > .card {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .home {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .home .hero-card,
+  .home > .card:has(.mini-stats),
+  .home .home-links {
+    grid-column: auto;
+  }
+}
 
 .settings-grid {
   max-width: none;
