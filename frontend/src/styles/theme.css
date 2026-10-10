@@ -23,3 +23,35 @@
   --text: #fbeee6;
   --muted: #c3a99c;
 }
+
+:root {
+  color-scheme: light;
+
+  /* Background and surfaces */
+  --bg-from: #fff8f2;
+  --bg-to: #fff0e6;
+  --sidebar: #e87545;
+  --card: rgba(255, 255, 255, 0.94);
+
+  /* Text */
+  --text: #302820;
+  --muted: #756b63;
+
+  /* Accent and status colours */
+  --accent: #c9572c;
+  --green: #328653;
+  --yellow: #f5d77e;
+  --lavender: #cdb8ff;
+  --sky: #a8d8ff;
+
+  /* Shared design tokens */
+  --radius: 18px;
+  --shadow: 0 4px 18px rgba(67, 43, 27, 0.07);
+
+  --input-bg: #ffffff;
+  --input-border: #d9c9bd;
+  --input-text: #302820;
+  --chip-bg: #fff7f1;
+  --chip-text: #302820;
+  --panel-bg: #fff8f2;
+}
