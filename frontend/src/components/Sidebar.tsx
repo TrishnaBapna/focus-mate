@@ -1,31 +1,17 @@
 import { NavLink } from "react-router-dom";
-import { logout } from "../services/auth";
-
-const links = [
-  { to: "/", icon: "🏠", label: "Dashboard" },
-  { to: "/tasks", icon: "✅", label: "Tasks" },
-  { to: "/subjects", icon: "📚", label: "Subjects" },
-  { to: "/planner", icon: "📅", label: "Planner" },
-  { to: "/exams", icon: "🎓", label: "Exams" },
-  { to: "/focus", icon: "⏱️", label: "Focus" },
-  { to: "/notes", icon: "📝", label: "Notes" },
-  { to: "/study", icon: "🃏", label: "Study" },
-  { to: "/achievements", icon: "🏆", label: "Achievements" },
-  { to: "/analytics", icon: "📊", label: "Analytics" },
-  { to: "/settings", icon: "⚙️", label: "Settings" },
-];
+import MoreMenu from "./MoreMenu";
+import { MAIN_NAV } from "./navItems";
 
 export default function Sidebar() {
   return (
     <nav className="sidebar">
-      {links.map((l) => (
-        <NavLink key={l.to} to={l.to} title={l.label} end={l.to === "/"}>
-          {l.icon}
+      {MAIN_NAV.map((l) => (
+        <NavLink key={l.to} to={l.to} end={l.to === "/"} className="side-link">
+          <span className="side-icon">{l.icon}</span>
+          <span className="side-label">{l.label}</span>
         </NavLink>
       ))}
-      <button className="logout-btn" title="Log out" onClick={() => logout()}>
-        🚪
-      </button>
+      <MoreMenu />
     </nav>
   );
 }

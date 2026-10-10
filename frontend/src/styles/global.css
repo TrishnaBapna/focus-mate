@@ -1096,3 +1096,92 @@ a.suggestion:hover { background: rgba(255, 138, 76, 0.22); }
 /* ---------- Polish: exam dots and password reset ---------- */
 .dot.exam { background: #9d8cff; }
 .link-btn.forgot { align-self: flex-end; font-size: 13px; margin-top: -6px; }
+
+/* ---------- Simpler, centered layout ---------- */
+.app-main { max-width: 920px; margin: 0 auto; width: 100%; }
+.app-main > *:not(.focus-running):not(.study-wrap):not(.away-notice):not(.home) {
+  max-width: 100% !important;
+}
+
+/* Sidebar: labelled icons, stays in view while you scroll */
+.sidebar {
+  width: 92px;
+  position: sticky;
+  top: 20px;
+  z-index: 30;
+  align-self: flex-start;
+  height: calc(100vh - 40px);
+  gap: 6px;
+  padding: 16px 0;
+}
+.sidebar .side-link, .more-btn {
+  width: 72px;
+  height: auto;
+  padding: 10px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  border-radius: 16px;
+  background: none;
+  color: white;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.side-icon { font-size: 22px; line-height: 1; }
+.side-label { font-size: 11px; font-weight: 700; color: white; }
+.sidebar .side-link.active, .more-btn.open { background: rgba(255, 255, 255, 0.32); }
+
+.more-wrap { margin-top: auto; position: relative; display: flex; justify-content: center; width: 100%; }
+.pop-backdrop { position: fixed; inset: 0; z-index: 65; }
+.more-pop {
+  position: absolute;
+  left: calc(100% + 12px);
+  bottom: 0;
+  z-index: 70;
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 18px;
+  background: var(--sheet-bg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.sidebar .more-pop a, .more-pop button {
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  color: var(--sheet-text);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sidebar .more-pop a:hover, .more-pop button:hover { background: rgba(255, 138, 76, 0.15); }
+.sidebar .more-pop a.active { background: var(--accent); color: white; }
+
+/* Home: one calm column */
+.home { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
+.mini-stat { display: flex; flex-direction: column; gap: 2px; }
+.mini-stat .stat-big { font-size: 24px; }
+.goal-bar { margin-top: 14px; }
+.goal-text { text-align: center; margin-top: 6px; }
+.home-links { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; padding: 4px 0 12px; }
+.home-links .link-btn { text-decoration: none; }
+
+/* Focus setup: advanced options folded away */
+.more-options summary { cursor: pointer; font-weight: 700; color: var(--accent); }
+.more-options-body { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.focus-setup .strict-toggle input:disabled { opacity: 0.4; }

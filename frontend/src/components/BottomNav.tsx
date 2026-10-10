@@ -1,23 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { logout } from "../services/auth";
-
-const mainLinks = [
-  { to: "/", icon: "🏠", label: "Home" },
-  { to: "/planner", icon: "📅", label: "Planner" },
-  { to: "/focus", icon: "⏱️", label: "Focus" },
-  { to: "/notes", icon: "📝", label: "Notes" },
-];
-
-const moreLinks = [
-  { to: "/study", icon: "🃏", label: "Study" },
-  { to: "/tasks", icon: "✅", label: "Tasks" },
-  { to: "/subjects", icon: "📚", label: "Subjects" },
-  { to: "/exams", icon: "🎓", label: "Exams" },
-  { to: "/achievements", icon: "🏆", label: "Achievements" },
-  { to: "/analytics", icon: "📊", label: "Analytics" },
-  { to: "/settings", icon: "⚙️", label: "Settings" },
-];
+import { MAIN_NAV, MORE_NAV } from "./navItems";
 
 // Only visible on small screens (see the media query in global.css)
 export default function BottomNav() {
@@ -29,7 +13,7 @@ export default function BottomNav() {
 
       {open && (
         <div className="more-sheet">
-          {moreLinks.map((l) => (
+          {MORE_NAV.map((l) => (
             <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)}>
               <span>{l.icon}</span>
               {l.label}
@@ -43,7 +27,7 @@ export default function BottomNav() {
       )}
 
       <nav className="bottom-nav">
-        {mainLinks.map((l) => (
+        {MAIN_NAV.map((l) => (
           <NavLink
             key={l.to}
             to={l.to}

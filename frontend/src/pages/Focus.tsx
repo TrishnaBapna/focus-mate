@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFocus } from "../hooks/useFocus";
 import { useSubjects } from "../hooks/useSubjects";
@@ -13,47 +12,10 @@ const MODES: { id: SessionMode; label: string }[] = [
   { id: "stopwatch", label: "Stopwatch" },
 ];
 
-// Ending a strict session takes a short pause and a deliberate click
-function EndConfirmModal({
-  focused,
-  onConfirm,
-  onCancel,
-}: {
-  focused: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const [wait, setWait] = useState(5);
-
-  useEffect(() => {
-    if (wait <= 0) return;
-    const id = window.setTimeout(() => setWait((w) => w - 1), 1000);
-    return () => window.clearTimeout(id);
-  }, [wait]);
-
-  return (
-    <div className="modal-backdrop">
-      <div className="card modal">
-        <h3>End this session early?</h3>
-        <p>You've focused for {focused}. That time will still be saved.</p>
-        <div className="focus-controls">
-          <button className="btn" onClick={onCancel}>
-            Keep focusing
-          </button>
-          <button className="btn secondary" disabled={wait > 0} onClick={onConfirm}>
-            {wait > 0 ? `End session (${wait})` : "End session"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function Focus() {
   const f = useFocus();
   const { subjects } = useSubjects();
   const { sessions } = useSessions(5);
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // ---------- Running (focus or break) ----------
   if (f.phase === "focus" || f.phase === "break") {
@@ -63,7 +25,7 @@ export default function Focus() {
     return (
       <>
         <div className={`card focus-running ${strictRun ? "strict" : ""}`}>
-          {strictRun && <p className="strict-banner">⚠️ STRICT FOCUS</p>}
+          {strictRun && <p className="strict-banner">🔒 STRICT FOCUS</p>}
 
           <p className="focus-subject">
             {isBreak ? "☕ Break time" : `${f.subject?.emoji} ${f.subject?.name}`}
@@ -80,34 +42,10 @@ export default function Focus() {
 
           {!isBreak && f.goal && <p className="focus-goal">🎯 {f.goal}</p>}
 
-          <div className="focus-controls">
-            {!strictRun &&
-              (f.running ? (
-                <button className="btn" onClick={f.pause}>Pause</button>
-              ) : (
-                <button className="btn" onClick={f.resume}>Resume</button>
-              ))}
-
-            {isBreak ? (
-              <button className="btn secondary" onClick={f.backToSetup}>Skip break</button>
-            ) : strictRun ? (
-              <button className="btn secondary" onClick={() => setConfirmOpen(true)}>
-                End session
-              </button>
-            ) : (
-              <>
-                <button className="btn secondary" onClick={f.finishEarly}>
-                  Finish session
-                </button>
-                <button className="link-btn" onClick={f.cancelSession}>Cancel</button>
-              </>
-            )}
-          </div>
-
-          {strictRun && (
+          {strictRun ? (
             <>
               <p className="muted strict-hint">
-                Once started, ending the session requires confirmation. 🔕 Turn on Do Not
+                Locked until the timer ends. Leaving the tab is recorded. 🔕 Turn on Do Not
                 Disturb on your device to silence notifications.
               </p>
               {f.awayCount > 0 && (
@@ -116,6 +54,24 @@ export default function Focus() {
                 </p>
               )}
             </>
+          ) : (
+            <div className="focus-controls">
+              {f.running ? (
+                <button className="btn" onClick={f.pause}>Pause</button>
+              ) : (
+                <button className="btn" onClick={f.resume}>Resume</button>
+              )}
+              {isBreak ? (
+                <button className="btn secondary" onClick={f.backToSetup}>Skip break</button>
+              ) : (
+                <>
+                  <button className="btn secondary" onClick={f.finishEarly}>
+                    Finish session
+                  </button>
+                  <button className="link-btn" onClick={f.cancelSession}>Cancel</button>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -129,17 +85,6 @@ export default function Focus() {
               ✕
             </button>
           </div>
-        )}
-
-        {confirmOpen && (
-          <EndConfirmModal
-            focused={formatDuration(f.elapsedSeconds)}
-            onCancel={() => setConfirmOpen(false)}
-            onConfirm={() => {
-              setConfirmOpen(false);
-              f.finishEarly();
-            }}
-          />
         )}
       </>
     );
@@ -217,7 +162,10 @@ export default function Focus() {
                 key={m.id}
                 type="button"
                 className={`chip ${f.mode === m.id ? "selected" : ""}`}
-                onClick={() => f.setMode(m.id)}
+                onClick={() => {
+                  f.setMode(m.id);
+                  if (m.id === "stopwatch") f.setStrict(false); // strict needs a timer length
+                }}
               >
                 {m.label}
               </button>
@@ -234,15 +182,6 @@ export default function Focus() {
                 </option>
               ))}
             </select>
-          </label>
-
-          <label>
-            Topic
-            <input
-              placeholder="e.g. Integration"
-              value={f.topic}
-              onChange={(e) => f.setTopic(e.target.value)}
-            />
           </label>
 
           {f.mode !== "stopwatch" && (
@@ -271,41 +210,58 @@ export default function Focus() {
             </div>
           )}
 
-          {f.mode === "pomodoro" && (
-            <label>
-              Break (minutes)
-              <input
-                className="minutes-input"
-                type="number"
-                min={1}
-                value={f.breakMinutes}
-                onChange={(e) => f.setBreakMinutes(Math.max(1, Number(e.target.value) || 1))}
-              />
-            </label>
-          )}
-
-          <label>
-            Goal
-            <input
-              placeholder="e.g. Complete 10 problems"
-              value={f.goal}
-              onChange={(e) => f.setGoal(e.target.value)}
-            />
-          </label>
-
           <label className="strict-toggle">
             <input
               type="checkbox"
-              checked={f.strict}
+              checked={f.strict && f.mode !== "stopwatch"}
+              disabled={f.mode === "stopwatch"}
               onChange={(e) => f.setStrict(e.target.checked)}
             />
             <span>
               🔒 Strict mode
               <small>
-                No pausing or leaving this page, and ending early needs confirmation.
+                {f.mode === "stopwatch"
+                  ? "Needs a timer length, so it's off for Stopwatch."
+                  : "Locks the app until the timer ends. No pausing, no exit button."}
               </small>
             </span>
           </label>
+
+          <details className="more-options">
+            <summary>More options</summary>
+            <div className="more-options-body">
+              <label>
+                Topic
+                <input
+                  placeholder="e.g. Integration"
+                  value={f.topic}
+                  onChange={(e) => f.setTopic(e.target.value)}
+                />
+              </label>
+
+              <label>
+                Goal
+                <input
+                  placeholder="e.g. Complete 10 problems"
+                  value={f.goal}
+                  onChange={(e) => f.setGoal(e.target.value)}
+                />
+              </label>
+
+              {f.mode === "pomodoro" && (
+                <label>
+                  Break (minutes)
+                  <input
+                    className="minutes-input"
+                    type="number"
+                    min={1}
+                    value={f.breakMinutes}
+                    onChange={(e) => f.setBreakMinutes(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </label>
+              )}
+            </div>
+          </details>
 
           <button className="btn" disabled={!f.subjectId} onClick={f.startFocus}>
             START FOCUS
