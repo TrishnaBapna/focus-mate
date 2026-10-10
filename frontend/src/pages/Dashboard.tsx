@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import GardenCard from "../components/GardenCard";
 import { Link } from "react-router-dom";
 import ExamCountdownCard from "../components/ExamCountdownCard";
 import StudyDueCard from "../components/StudyDueCard";
@@ -77,6 +78,8 @@ export default function Dashboard() {
           {percent}% of your {formatDuration(goalSeconds)} goal
         </p>
       </section>
+
+      <GardenCard />
 
       <SuggestionsCard />
 

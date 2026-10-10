@@ -44,8 +44,10 @@ export interface FocusContextValue {
   strictActive: boolean; // a strict focus session is running right now
   awayCount: number;
   awaySeconds: number;
-  awayNotice: number | null; // seconds away, shown briefly after coming back
+  awayNotice: number | null; // seconds away, until the person taps "I'm back"
   dismissAwayNotice: () => void;
+  needsFullscreen: boolean; // full screen was left during a strict session
+  returnToFullscreen: () => void;
 
   startFocus: () => void;
   startBreak: () => void;

@@ -8,6 +8,7 @@ import BottomNav from "./BottomNav";
 import MiniTimer from "./MiniTimer";
 import Sidebar from "./Sidebar";
 import StrictGuard from "./StrictGuard";
+import StrictOverlay from "./StrictOverlay";
 import TopBar from "./TopBar";
 
 function Shell() {
@@ -26,6 +27,7 @@ function Shell() {
       {!strictActive && <BottomNav />}
       <MiniTimer />
       <StrictGuard />
+      <StrictOverlay />
     </>
   );
 }

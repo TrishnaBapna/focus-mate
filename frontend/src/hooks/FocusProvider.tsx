@@ -14,7 +14,22 @@ import { playChime } from "../utils/chime";
 import type { SessionMode } from "../types";
 
 const MIN_SAVE_SECONDS = 60;
-const MIN_AWAY_SECONDS = 3; // ignore quick flickers (like a fast Cmd+Tab)
+const MIN_AWAY_SECONDS = 3; // ignore quick flickers
+
+type KeyboardApi = {
+  keyboard?: { lock?: (keys: string[]) => Promise<void>; unlock?: () => void };
+};
+
+// Goes full screen and, where the browser allows it (Chrome, Edge), captures the Esc key.
+// Must be called from a click or tap.
+async function enterFullscreen() {
+  try {
+    await document.documentElement.requestFullscreen?.();
+    await (navigator as Navigator & KeyboardApi).keyboard?.lock?.(["Escape"]);
+  } catch {
+    // not supported, or the browser said no: that's fine
+  }
+}
 
 export default function FocusProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -30,11 +45,13 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
   const [strict, setStrict] = useState(false);
   const [result, setResult] = useState<FocusResult | null>(null);
 
-  // Time spent away from the tab during a strict session
+  // Strict mode: every time the person leaves
   const [away, setAway] = useState({ count: 0, seconds: 0 });
   const [awayNotice, setAwayNotice] = useState<number | null>(null);
+  const [needsFullscreen, setNeedsFullscreen] = useState(false);
   const awayRef = useRef({ count: 0, seconds: 0 });
   const awayStartRef = useRef<number | null>(null);
+  const fullscreenEnteredRef = useRef(false);
 
   const subject = subjects.find((s) => s.id === subjectId);
   const strictActive = phase === "focus" && strict;
@@ -104,17 +121,17 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
 
     awayRef.current = { count: 0, seconds: 0 };
     awayStartRef.current = null;
+    fullscreenEnteredRef.current = false;
     setAway(awayRef.current);
     setAwayNotice(null);
+    setNeedsFullscreen(false);
 
     timer.reset();
     setPhase("focus");
     timer.start();
 
     // Must happen inside the click that started the session
-    if (strict) {
-      Promise.resolve(document.documentElement.requestFullscreen?.()).catch(() => {});
-    }
+    if (strict) void enterFullscreen();
   }
 
   function startBreak() {
@@ -158,15 +175,15 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [phase]);
 
-  // Strict mode: notice when the tab is left, and when you come back
+  // Strict mode: notice when the tab or app is left, and when the person comes back
   useEffect(() => {
     if (!strictActive) return;
 
-    function onVisibility() {
-      if (document.hidden) {
-        awayStartRef.current = Date.now();
-        return;
-      }
+    function leave() {
+      if (awayStartRef.current === null) awayStartRef.current = Date.now();
+    }
+
+    function back() {
       if (awayStartRef.current === null) return;
       const secs = Math.round((Date.now() - awayStartRef.current) / 1000);
       awayStartRef.current = null;
@@ -180,18 +197,64 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    const onVisibility = () => (document.hidden ? leave() : back());
+    const onBlur = () => {
+      // Tapping inside an embedded player (like Spotify) isn't leaving
+      if (document.activeElement instanceof HTMLIFrameElement) return;
+      leave();
+    };
+
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", back);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", back);
+    };
   }, [strictActive]);
 
-  // Hide the "welcome back" note after a few seconds
+  // Strict mode: leaving full screen counts as leaving
   useEffect(() => {
-    if (awayNotice === null) return;
-    const id = window.setTimeout(() => setAwayNotice(null), 8000);
-    return () => window.clearTimeout(id);
-  }, [awayNotice]);
+    if (!strictActive) return;
 
-  // Strict mode: keep the screen awake, and leave full screen when it ends
+    function onFullscreenChange() {
+      if (document.fullscreenElement) {
+        fullscreenEnteredRef.current = true;
+        setNeedsFullscreen(false);
+        return;
+      }
+      if (fullscreenEnteredRef.current) {
+        fullscreenEnteredRef.current = false;
+        awayRef.current = { count: awayRef.current.count + 1, seconds: awayRef.current.seconds };
+        setAway(awayRef.current);
+        setNeedsFullscreen(true);
+      }
+    }
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, [strictActive]);
+
+  // Strict mode: block refresh shortcuts and the right-click menu
+  useEffect(() => {
+    if (!strictActive) return;
+
+    function onKey(e: KeyboardEvent) {
+      const refresh = e.key === "F5" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r");
+      if (refresh) e.preventDefault();
+    }
+    const onMenu = (e: Event) => e.preventDefault();
+
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("contextmenu", onMenu);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("contextmenu", onMenu);
+    };
+  }, [strictActive]);
+
+  // Strict mode: keep the screen awake, and let go of full screen and Esc when it ends
   useEffect(() => {
     if (!strictActive) return;
 
@@ -220,6 +283,11 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);
       if (lock) void lock.release();
+      try {
+        (navigator as Navigator & KeyboardApi).keyboard?.unlock?.();
+      } catch {
+        // nothing to unlock
+      }
       if (document.fullscreenElement) {
         Promise.resolve(document.exitFullscreen()).catch(() => {});
       }
@@ -254,8 +322,10 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
         strictActive,
         awayCount: away.count,
         awaySeconds: away.seconds,
-        awayNotice,
+        awayNotice: strictActive ? awayNotice : null,
         dismissAwayNotice: () => setAwayNotice(null),
+        needsFullscreen: strictActive && needsFullscreen,
+        returnToFullscreen: () => void enterFullscreen(),
         startFocus,
         startBreak,
         backToSetup,
