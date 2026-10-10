@@ -8,6 +8,7 @@ import BottomNav from "./BottomNav";
 import MiniTimer from "./MiniTimer";
 import Sidebar from "./Sidebar";
 import StrictGuard from "./StrictGuard";
+import TopBar from "./TopBar";
 
 function Shell() {
   const { strictActive } = useFocus();
@@ -15,6 +16,7 @@ function Shell() {
   return (
     <>
       <AppBackground />
+      {!strictActive && <TopBar />}
       <div className={`app-shell ${strictActive ? "locked" : ""}`}>
         {!strictActive && <Sidebar />}
         <main className="app-main">

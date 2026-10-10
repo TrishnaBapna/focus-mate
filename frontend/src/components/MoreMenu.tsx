@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { logout } from "../services/auth";
-import { MORE_NAV } from "./navItems";
+import type { NavItem } from "./navItems";
 
-// The "More" button and its pop-up menu on the desktop sidebar
-export default function MoreMenu() {
+// The "More" button and its pop-up on the sidebar (only the items that didn't fit)
+export default function MoreMenu({ items }: { items: NavItem[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -13,16 +12,12 @@ export default function MoreMenu() {
 
       {open && (
         <div className="more-pop">
-          {MORE_NAV.map((l) => (
+          {items.map((l) => (
             <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)}>
               <span>{l.icon}</span>
               {l.label}
             </NavLink>
           ))}
-          <button onClick={() => logout()}>
-            <span>🚪</span>
-            Log out
-          </button>
         </div>
       )}
 

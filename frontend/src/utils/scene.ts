@@ -5,7 +5,8 @@ export type Scene =
   | "night"
   | "focus"
   | "break"
-  | "celebrate";
+  | "celebrate"
+  | "custom";
 
 export const SCENES: Scene[] = [
   "sunrise",
@@ -15,6 +16,7 @@ export const SCENES: Scene[] = [
   "focus",
   "break",
   "celebrate",
+  "custom",
 ];
 
 export function isScene(value: string | null): value is Scene {

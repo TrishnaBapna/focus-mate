@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CustomBackgroundCard from "../components/CustomBackgroundCard";
 import AiSettingsCard from "../components/AiSettingsCard";
 import { updateProfile } from "firebase/auth";
 import { useAuth } from "../hooks/useAuth";
@@ -140,6 +141,8 @@ export default function Settings() {
             ))}
           </div>
         </section>
+
+        <CustomBackgroundCard />
 
         <AiSettingsCard />
 

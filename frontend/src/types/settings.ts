@@ -7,4 +7,5 @@ export interface Settings {
   dailyGoalMinutes: number;
   theme: ThemeChoice;
   background: BackgroundChoice;
+  customBackgroundId?: string; // the person's own photo, kept in the media area
 }

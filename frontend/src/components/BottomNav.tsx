@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { logout } from "../services/auth";
-import { MAIN_NAV, MORE_NAV } from "./navItems";
+import { NAV_ITEMS, PHONE_NAV_COUNT } from "./navItems";
 
-// Only visible on small screens (see the media query in global.css)
+// Only visible on phones (see the media query in global.css)
 export default function BottomNav() {
   const [open, setOpen] = useState(false);
+  const shown = NAV_ITEMS.slice(0, PHONE_NAV_COUNT);
+  const rest = NAV_ITEMS.slice(PHONE_NAV_COUNT);
 
   return (
     <>
@@ -13,21 +14,17 @@ export default function BottomNav() {
 
       {open && (
         <div className="more-sheet">
-          {MORE_NAV.map((l) => (
+          {rest.map((l) => (
             <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)}>
               <span>{l.icon}</span>
               {l.label}
             </NavLink>
           ))}
-          <button onClick={() => logout()}>
-            <span>🚪</span>
-            Log out
-          </button>
         </div>
       )}
 
       <nav className="bottom-nav">
-        {MAIN_NAV.map((l) => (
+        {shown.map((l) => (
           <NavLink
             key={l.to}
             to={l.to}

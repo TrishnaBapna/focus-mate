@@ -1,18 +1,24 @@
-// The five things you use most, always visible
-export const MAIN_NAV = [
+export interface NavItem {
+  to: string;
+  icon: string;
+  label: string;
+}
+
+// Ordered by importance. Small screens show the first few; the rest go under "More".
+export const NAV_ITEMS: NavItem[] = [
   { to: "/", icon: "🏠", label: "Home" },
   { to: "/focus", icon: "⏱️", label: "Focus" },
   { to: "/planner", icon: "📅", label: "Plan" },
   { to: "/notes", icon: "📝", label: "Notes" },
+  { to: "/tasks", icon: "✅", label: "Tasks" },
   { to: "/study", icon: "🃏", label: "Study" },
+  { to: "/exams", icon: "🎓", label: "Exams" },
+  { to: "/subjects", icon: "📚", label: "Subjects" },
+  { to: "/achievements", icon: "🏆", label: "Awards" },
+  { to: "/analytics", icon: "📊", label: "Stats" },
 ];
 
-// Everything else lives under "More"
-export const MORE_NAV = [
-  { to: "/tasks", icon: "✅", label: "Tasks" },
-  { to: "/subjects", icon: "📚", label: "Subjects" },
-  { to: "/exams", icon: "🎓", label: "Exams" },
-  { to: "/achievements", icon: "🏆", label: "Achievements" },
-  { to: "/analytics", icon: "📊", label: "Analytics" },
-  { to: "/settings", icon: "⚙️", label: "Settings" },
-];
+// Always visible, never hidden under "More"
+export const SETTINGS_NAV: NavItem = { to: "/settings", icon: "⚙️", label: "Settings" };
+
+export const PHONE_NAV_COUNT = 4;

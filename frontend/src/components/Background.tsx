@@ -120,12 +120,14 @@ function SceneDecor({ scene }: { scene: Scene }) {
           <div className="blob b2" />
         </>
       );
+    case "custom":
+      return null;
     case "celebrate":
       return <Confetti />;
   }
 }
 
-export default function Background({ scene }: { scene: Scene }) {
+export default function Background({ scene, customUrl }: { scene: Scene; customUrl?: string }) {
   // Tell the CSS which scene is active (night/focus switch to dark cards)
   useEffect(() => {
     document.documentElement.dataset.scene = scene;
@@ -137,7 +139,11 @@ export default function Background({ scene }: { scene: Scene }) {
   return (
     <div className="bg-root" aria-hidden="true">
       {SCENES.map((s) => (
-        <div key={s} className={`bg-layer bg-${s} ${s === scene ? "active" : ""}`}>
+        <div
+          key={s}
+          className={`bg-layer bg-${s} ${s === scene ? "active" : ""}`}
+          style={s === "custom" && customUrl ? { backgroundImage: `url(${customUrl})` } : undefined}
+        >
           <SceneDecor scene={s} />
         </div>
       ))}
