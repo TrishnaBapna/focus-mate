@@ -1,62 +1,64 @@
 export const OCR_LANGUAGES = [
-  { code: "eng", label: "English" },
-  { code: "hin", label: "Hindi" },
-  { code: "spa", label: "Spanish" },
-  { code: "fra", label: "French" },
-  { code: "deu", label: "German" },
+{ code: "eng", label: "English" },
+{ code: "hin", label: "Hindi" },
+{ code: "spa", label: "Spanish" },
+{ code: "fra", label: "French" },
+{ code: "deu", label: "German" },
 ];
 
-// Reads the text in an image, right in the browser.
-// The library is loaded only when needed, so the rest of the app stays light.
+// Reads text from images in the browser.
 export async function recognizeText(
-  image: Blob,
-  lang: string,
-  onProgress: (fraction: number) => void
+image: Blob,
+lang: string,
+onProgress: (fraction: number) => void
 ): Promise<string> {
-  const { createWorker } = await import("tesseract.js");
-  const worker = await createWorker(lang, 1, {
-    logger: (m) => {
-      if (m.status === "recognizing text") onProgress(m.progress);
-    },
-  });
+const { createWorker } = await import("tesseract.js");
+const worker = await createWorker(lang, 1, {
+logger: (message) => {
+if (message.status === "recognizing text") {
+onProgress(message.progress);
+}
+},
+});
 
-  try {
-    const { data } = await worker.recognize(image);
-    return data.text;
-  } finally {
-    await worker.terminate();
-  }
+try {
+const { data } = await worker.recognize(image);
+return data.text;
+} finally {
+await worker.terminate();
+}
 }
 
-// Reads many pages with the same engine (much faster than starting // Reads many pages with the same engine (much faster than starting // Reads many pages with the same engc function recognizePages(
-  images: (Blob | null)[],
-  lang: string,
-  onProgress: (pageIndex: number, fraction: number) => void,
-  shouldStop: () => boolean
+// Reads multiple pages and supports stopping between pages.
+export async function recognizePages(
+images: (Blob | null)[],
+lang: string,
+onProgress: (pageIndex: number, fraction: number) => void,
+shouldStop: () => boolean
 ): Promise<(string | null)[]> {
-  const { createWorker } = await import("tesseract.js");
-  let current = 0;
-  const worker = await createWorker(lang, 1, {
-    logger: (m) => {
-      if (m.status === "recognizing text") onProgress(current, m.progress);
-    },
-  });
+const results: (string | null)[] = [];
 
-  try {
-    const results: (string | null)[] = [];
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i];
-      if (shouldStop() || !image) {
-        results.push(null);
-        continue;
-      }
-      current = i;
-      onProgress(i, 0);
-      const { data } = await worker.recognize(image);
-      results.push(data.text);
-    }
-    return results;
-  } finally {
-    await worker.terminate();
-  }
+for (let i = 0; i < images.length; i++) {
+if (shouldStop()) break;
+
+
+const image = images[i];
+
+if (!image) {
+  results.push(null);
+  continue;
+}
+
+const text = await recognizeText(image, lang, (fraction) => {
+  onProgress(i, fraction);
+});
+
+results.push(text);
+
+if (shouldStop()) break;
+
+
+}
+
+return results;
 }

@@ -39,6 +39,7 @@ export interface Note {
   audioMime?: string;
   audioSeconds?: number;
   imageId?: string; // photo in the media area, for scanned notes
+  pages?: { imageId: string; thumb?: string }[];
   imageMime?: string;
   thumb?: string; // tiny preview image (data URL), for scanned notes
   createdAt?: Timestamp | null;

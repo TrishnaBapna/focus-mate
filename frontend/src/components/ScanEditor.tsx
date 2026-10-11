@@ -16,20 +16,23 @@ import AiToolsPanel from "./AiToolsPanel";
 const MAX_PAGES = 40;
 const MAX_DOC_CHARS = 900000; // a note must stay under Firestore's ~1 MB limit
 
+
 interface DraftPage {
   key: string;
-  imageId?: string; // already saved
-  blob?: Blob; // new, not saved yet
-  url?: string; // preview for new pages
+  blob?: Blob;
+  url?: string;
+  imageId?: string;
+  pages?: { imageId: string; thumb?: string }[];
+  imageMime?: string;
   thumb: string;
   text?: string;
-  fromPdfText?: boolean; // text came from inside a PDF, so no OCR is needed
+  fromPdfText?: boolean;
 }
 
 function draftsFromNote(note?: Note): DraftPage[] {
   if (!note) return [];
   if (note.pages && note.pages.length > 0) {
-    return note.pages.map((p) => ({ key: newId(), imageId: p.imageId, thumb: p.thumb }));
+    return note.pages.map((p) => ({ key: newId(), imageId: p.imageId, thumb: p.thumb ?? "" }));
   }
   if (note.imageId) return [{ key: newId(), imageId: note.imageId, thumb: note.thumb ?? "" }];
   return [];
@@ -258,14 +261,14 @@ export default function ScanEditor({ note }: { note?: Note }) {
       for (let i = 0; i < pages.length; i++) {
         const p = pages[i];
         if (p.imageId) {
-          out.push({ imageId: p.imageId, thumb: p.thumb });
+          out.push({ imageId: p.imageId, thumb: p.thumb ?? "" });
           continue;
         }
         if (!p.blob) continue;
         setStatus(`Saving page ${i + 1} of ${pages.length}…`);
         const id = await saveMedia(user.uid, p.blob);
         savedNow.push(id);
-        out.push({ imageId: id, thumb: p.thumb });
+        out.push({ imageId: id, thumb: p.thumb ?? "" });
       }
 
       const subject = subjects.find((s) => s.id === subjectId);
