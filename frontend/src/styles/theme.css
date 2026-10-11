@@ -1,57 +1,64 @@
-:root {
-  --bg-from: #ffb199;
-  --bg-to: #ffe3c2;
-  --sidebar: #ff8a4c;
-  --accent: #ff7a3d;
-  --card: rgba(255, 255, 255, 0.75);
-  --text: #3b2a24;
-  --muted: #9a8378;
-
-  --green: #5fcf80;
-  --yellow: #ffe08a;
-  --lavender: #cdb8ff;
-  --sky: #a8d8ff;
-
-  --radius: 20px;
-  --shadow: 0 8px 30px rgba(255, 138, 76, 0.15);
-}
-
-[data-theme="dark"] {
-  --bg-from: #2b1d2e;
-  --bg-to: #3d2a2a;
-  --card: rgba(255, 255, 255, 0.08);
-  --text: #fbeee6;
-  --muted: #c3a99c;
-}
 
 :root {
   color-scheme: light;
 
-  /* Background and surfaces */
-  --bg-from: #fff8f2;
-  --bg-to: #fff0e6;
-  --sidebar: #e87545;
+  /* Peach and pink background */
+  --bg-from: #ffb7ad;
+  --bg-to: #ffe4bd;
+
+  /* Warm orange sidebar and buttons */
+  --sidebar: #ff8a4c;
+  --accent: #f47c48;
+
+  /* White dashboard cards */
   --card: rgba(255, 255, 255, 0.94);
+  --panel-bg: #fffaf6;
 
   /* Text */
-  --text: #302820;
-  --muted: #756b63;
+  --text: #392a25;
+  --muted: #927d73;
 
-  /* Accent and status colours */
-  --accent: #c9572c;
-  --green: #328653;
-  --yellow: #f5d77e;
+  /* Status and decoration */
+  --green: #65c98a;
+  --yellow: #ffe08a;
+  --lavender: #d8c5ff;
+  --sky: #b8e0ff;
+
+  /* Rounded, soft design */
+  --radius: 22px;
+  --shadow: 0 8px 28px rgba(123, 69, 45, 0.10);
+
+  /* Form controls */
+  --input-bg: #ffffff;
+  --input-border: #ead8cd;
+  --input-text: #392a25;
+  --chip-bg: #fff2e8;
+  --chip-text: #392a25;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-from: #302431;
+  --bg-to: #47332f;
+  --sidebar: #b96e4d;
+  --accent: #ff9a68;
+  --card: rgba(54, 42, 43, 0.94);
+  --panel-bg: #382c2c;
+
+  --text: #fff0e7;
+  --muted: #c9b2a6;
+
+  --green: #72d497;
+  --yellow: #f2d47b;
   --lavender: #cdb8ff;
   --sky: #a8d8ff;
 
-  /* Shared design tokens */
-  --radius: 18px;
-  --shadow: 0 4px 18px rgba(67, 43, 27, 0.07);
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
 
-  --input-bg: #ffffff;
-  --input-border: #d9c9bd;
-  --input-text: #302820;
-  --chip-bg: #fff7f1;
-  --chip-text: #302820;
-  --panel-bg: #fff8f2;
+  --input-bg: #423434;
+  --input-border: #66514a;
+  --input-text: #fff0e7;
+  --chip-bg: #493634;
+  --chip-text: #fff0e7;
 }

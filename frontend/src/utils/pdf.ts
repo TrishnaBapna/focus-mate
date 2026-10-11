@@ -1,6 +1,8 @@
-
-import { getDocument } from "pdfjs-dist";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { prepareCanvas, type PreparedPage } from "./pages";
+
+GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export interface PdfPage extends PreparedPage {
   text: string;
@@ -16,7 +18,10 @@ export async function importPdf(
 ): Promise<{ pages: PdfPage[]; totalPages: number }> {
   const data = await file.arrayBuffer();
 
-  const pdf = await getDocument({ data }).promise;
+  const pdf = await getDocument({
+  data,
+  standardFontDataUrl: "/pdf-fonts/",
+}).promise;
   const pages: PdfPage[] = [];
   const totalPages = pdf.numPages;
   const pagesToImport = Math.min(totalPages, maxPages);
