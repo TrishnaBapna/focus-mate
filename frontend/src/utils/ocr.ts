@@ -27,3 +27,36 @@ export async function recognizeText(
     await worker.terminate();
   }
 }
+
+// Reads many pages with the same engine (much faster than starting // Reads many pages with the same engine (much faster than starting // Reads many pages with the same engc function recognizePages(
+  images: (Blob | null)[],
+  lang: string,
+  onProgress: (pageIndex: number, fraction: number) => void,
+  shouldStop: () => boolean
+): Promise<(string | null)[]> {
+  const { createWorker } = await import("tesseract.js");
+  let current = 0;
+  const worker = await createWorker(lang, 1, {
+    logger: (m) => {
+      if (m.status === "recognizing text") onProgress(current, m.progress);
+    },
+  });
+
+  try {
+    const results: (string | null)[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      if (shouldStop() || !image) {
+        results.push(null);
+        continue;
+      }
+      current = i;
+      onProgress(i, 0);
+      const { data } = await worker.recognize(image);
+      results.push(data.text);
+    }
+    return results;
+  } finally {
+    await worker.terminate();
+  }
+}
