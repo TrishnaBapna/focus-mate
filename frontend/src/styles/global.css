@@ -1872,3 +1872,751 @@ button,
   .focus-mode { padding: 7px; }
   .bell-pop { position: fixed; left: 12px; right: 12px; top: 64px; width: auto; max-width: none; }
 }
+/* =====================================================================
+   FocusMate Design System: Dynamic Theme & Contrast Engine
+   Supports: Light Mode, Dark Mode, System Preference, and Custom Wallpapers
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+/* ---------------------------------------------------------------------
+   1. Dynamic Theme Variables (Light Mode Defaults)
+   --------------------------------------------------------------------- */
+
+:root {
+  --wf-font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
+  --wf-font-brand: 'Quicksand', 'Nunito', sans-serif;
+
+  /* Accent Colors */
+  --wf-orange: #FF7438;
+  --wf-orange-grad: linear-gradient(180deg, #FF9554 0%, #FF7438 100%);
+  --wf-orange-shadow: 0 10px 28px rgba(255, 116, 56, 0.35);
+  --wf-green: #5DC888;
+  --wf-green-bg: rgba(93, 200, 136, 0.18);
+
+  /* Light Theme Window & Cards */
+  --wf-bg-fallback: radial-gradient(circle at 10% 100%, rgba(255, 120, 170, 0.45), transparent 45%),
+                    radial-gradient(circle at 85% 0%, rgba(255, 215, 185, 0.6), transparent 50%),
+                    linear-gradient(135deg, #FFB1A5 0%, #FFC5B2 40%, #FFE5CD 100%);
+
+  --wf-window-bg: rgba(255, 255, 255, 0.68);
+  --wf-window-border: rgba(255, 255, 255, 0.85);
+  --wf-window-shadow: 0 24px 60px rgba(210, 100, 70, 0.16);
+
+  --wf-card-bg: rgba(255, 255, 255, 0.94);
+  --wf-card-border: rgba(255, 255, 255, 0.85);
+  --wf-card-shadow: 0 6px 20px rgba(180, 100, 70, 0.06);
+
+  --wf-topbar-bg: #ffffff;
+  --wf-topbar-shadow: 0 4px 18px rgba(180, 100, 70, 0.05);
+
+  --wf-text-main: #302622;
+  --wf-text-muted: #7A6B63;
+
+  --wf-subtle-bg: #F8F7F5;
+  --wf-subtle-border: rgba(210, 195, 185, 0.6);
+
+  --wf-cal-bg: rgba(255, 255, 255, 0.65);
+  --wf-cal-border: rgba(255, 255, 255, 0.85);
+
+  --wf-donut-bg: rgba(93, 200, 136, 0.2);
+}
+
+/* ---------------------------------------------------------------------
+   2. Dark Mode Overrides (data-theme="dark" or system dark preference)
+   --------------------------------------------------------------------- */
+
+[data-theme="dark"] {
+  --wf-bg-fallback: radial-gradient(circle at 10% 100%, rgba(130, 40, 80, 0.4), transparent 45%),
+                    radial-gradient(circle at 85% 0%, rgba(60, 40, 70, 0.6), transparent 50%),
+                    linear-gradient(135deg, #1E1528 0%, #2A1D36 50%, #3B243E 100%);
+
+  --wf-window-bg: rgba(24, 18, 30, 0.74);
+  --wf-window-border: rgba(255, 255, 255, 0.12);
+  --wf-window-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+  --wf-card-bg: rgba(40, 32, 48, 0.92);
+  --wf-card-border: rgba(255, 255, 255, 0.1);
+  --wf-card-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+
+  --wf-topbar-bg: rgba(40, 32, 48, 0.95);
+  --wf-topbar-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+
+  --wf-text-main: #FFF2EB;
+  --wf-text-muted: #C8B5AA;
+
+  --wf-subtle-bg: rgba(255, 255, 255, 0.08);
+  --wf-subtle-border: rgba(255, 255, 255, 0.14);
+
+  --wf-cal-bg: rgba(30, 24, 38, 0.7);
+  --wf-cal-border: rgba(255, 255, 255, 0.15);
+
+  --wf-orange-grad: linear-gradient(180deg, #FF8243 0%, #DE5A1E 100%);
+  --wf-orange-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+
+  --wf-donut-bg: rgba(93, 200, 136, 0.22);
+}
+
+/* System Dark Mode fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wf-bg-fallback: radial-gradient(circle at 10% 100%, rgba(130, 40, 80, 0.4), transparent 45%),
+                      radial-gradient(circle at 85% 0%, rgba(60, 40, 70, 0.6), transparent 50%),
+                      linear-gradient(135deg, #1E1528 0%, #2A1D36 50%, #3B243E 100%);
+
+    --wf-window-bg: rgba(24, 18, 30, 0.74);
+    --wf-window-border: rgba(255, 255, 255, 0.12);
+    --wf-window-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+    --wf-card-bg: rgba(40, 32, 48, 0.92);
+    --wf-card-border: rgba(255, 255, 255, 0.1);
+    --wf-card-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+
+    --wf-topbar-bg: rgba(40, 32, 48, 0.95);
+    --wf-topbar-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+
+    --wf-text-main: #FFF2EB;
+    --wf-text-muted: #C8B5AA;
+
+    --wf-subtle-bg: rgba(255, 255, 255, 0.08);
+    --wf-subtle-border: rgba(255, 255, 255, 0.14);
+
+    --wf-cal-bg: rgba(30, 24, 38, 0.7);
+    --wf-cal-border: rgba(255, 255, 255, 0.15);
+
+    --wf-orange-grad: linear-gradient(180deg, #FF8243 0%, #DE5A1E 100%);
+    --wf-orange-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+
+    --wf-donut-bg: rgba(93, 200, 136, 0.22);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   3. Base Layout & Custom Wallpaper Handling
+   --------------------------------------------------------------------- */
+
+body {
+  font-family: var(--wf-font-sans);
+  color: var(--wf-text-main);
+  background: var(--wf-bg-fallback);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+/* Keeps custom wallpapers and scene layers rendered behind everything */
+.bg-root {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Frosted Window Container */
+.app-container {
+  display: flex !important;
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 36px;
+  background: var(--wf-window-bg) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1.5px solid var(--wf-window-border) !important;
+  box-shadow: var(--wf-window-shadow) !important;
+  gap: 20px;
+  min-height: calc(100vh - 40px);
+  box-sizing: border-box;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ---------------------------------------------------------------------
+   4. Curved Orange Sidebar Rail
+   --------------------------------------------------------------------- */
+
+.wf-rail {
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.wf-rail-inner {
+  position: sticky;
+  top: 20px;
+  width: 58px;
+  height: calc(100vh - 80px);
+  min-height: 540px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 0;
+  border-radius: 28px;
+  background: var(--wf-orange-grad);
+  box-shadow: var(--wf-orange-shadow);
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.wf-rail-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-top,
+.rail-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.rail-link {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rail-link:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.rail-link.active {
+  background: #ffffff;
+  color: var(--wf-orange);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] .rail-link.active {
+  background: #FFF2EB;
+  color: #DE5A1E;
+}
+
+/* ---------------------------------------------------------------------
+   5. Top Bar
+   --------------------------------------------------------------------- */
+
+.main-content,
+.wf-main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--wf-topbar-bg);
+  border: 1px solid var(--wf-card-border);
+  border-radius: 20px;
+  padding: 10px 20px;
+  box-shadow: var(--wf-topbar-shadow);
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.wf-topbar-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--wf-text-main);
+}
+
+.wf-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.focus-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--wf-green-bg);
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--wf-text-main);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.fm-pill-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-green);
+}
+
+.wf-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wf-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--wf-orange-grad);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  overflow: hidden;
+}
+
+.wf-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wf-user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.wf-user-info strong {
+  font-size: 13px;
+  color: var(--wf-text-main);
+}
+
+.wf-user-info span {
+  font-size: 11px;
+  color: var(--wf-text-muted);
+}
+
+/* ---------------------------------------------------------------------
+   6. Dashboard Grid & Adaptive High-Contrast Cards
+   --------------------------------------------------------------------- */
+
+.wf-grid-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.wf-col-left,
+.wf-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* All Cards Adapt to Theme */
+.wf-white-card,
+.card {
+  background: var(--wf-card-bg) !important;
+  border: 1px solid var(--wf-card-border) !important;
+  border-radius: 20px !important;
+  padding: 16px 18px !important;
+  box-shadow: var(--wf-card-shadow) !important;
+  color: var(--wf-text-main) !important;
+  backdrop-filter: blur(12px) !important;
+  transition: background 0.25s, border-color 0.25s, color 0.25s;
+}
+
+.wf-card-title,
+.card h3 {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--wf-text-main) !important;
+  margin-bottom: 8px !important;
+}
+
+/* ---------------------------------------------------------------------
+   7. Hero Banner: Light Sunrise vs. Dark Twilight
+   --------------------------------------------------------------------- */
+
+.wf-hero-card {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #FFE4BD 0%, #FFB68E 50%, #FF9EA8 100%);
+  box-shadow: 0 8px 24px rgba(220, 110, 80, 0.14);
+  transition: background 0.3s;
+}
+
+[data-theme="dark"] .wf-hero-card,
+[data-scene="night"] .wf-hero-card {
+  background: linear-gradient(135deg, #2D2342 0%, #462B48 50%, #68374E 100%) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+.wf-hero-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wf-sun-orb {
+  position: absolute;
+  left: 28%;
+  top: 26%;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFFEE8 0%, rgba(255, 225, 150, 0.75) 45%, transparent 70%);
+}
+
+[data-theme="dark"] .wf-sun-orb,
+[data-scene="night"] .wf-sun-orb {
+  background: radial-gradient(circle, #EAE4FF 0%, rgba(180, 150, 255, 0.6) 45%, transparent 70%);
+}
+
+.wf-castle-skyline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 52%;
+}
+
+.wf-hero-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.wf-hero-text h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #38241B;
+  margin: 0 0 4px;
+}
+
+[data-theme="dark"] .wf-hero-text h2,
+[data-scene="night"] .wf-hero-text h2 {
+  color: #FFF0E7 !important;
+}
+
+.wf-hero-text p {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5C453C;
+  margin: 0 0 14px;
+}
+
+[data-theme="dark"] .wf-hero-text p,
+[data-scene="night"] .wf-hero-text p {
+  color: #DCC8BE !important;
+}
+
+.wf-ready-btn {
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 7px 24px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #38241B;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+[data-theme="dark"] .wf-ready-btn,
+[data-scene="night"] .wf-ready-btn {
+  background: #FFF2EB;
+  color: #2D2342;
+}
+
+/* Mini Calendar */
+.wf-mini-cal {
+  background: var(--wf-cal-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--wf-cal-border);
+  border-radius: 16px;
+  padding: 10px 12px;
+  width: 175px;
+}
+
+.cal-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--wf-text-muted);
+  margin-bottom: 4px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--wf-text-main);
+}
+
+.cal-cell {
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.today-highlight {
+  background: var(--wf-orange);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(255, 116, 56, 0.35);
+}
+
+/* ---------------------------------------------------------------------
+   8. Stats & Donut Ring
+   --------------------------------------------------------------------- */
+
+.wf-two-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.real-stats-summary {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 10.5px;
+  color: var(--wf-text-muted);
+  font-weight: 600;
+}
+
+.stat-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--wf-text-main);
+}
+
+.goal-progress-wrap {
+  margin-top: 8px;
+}
+
+.goal-progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--wf-donut-bg);
+  overflow: hidden;
+}
+
+.goal-fill {
+  height: 100%;
+  background: var(--wf-green);
+  border-radius: 999px;
+}
+
+.goal-caption {
+  font-size: 11px;
+  color: var(--wf-text-muted);
+  margin-top: 4px;
+  display: block;
+}
+
+.wf-perf-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wf-card-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.perf-sub {
+  font-size: 11px;
+  color: var(--wf-text-muted);
+}
+
+.donut-wrap {
+  margin: 6px 0;
+}
+
+.donut-svg {
+  width: 96px;
+  height: 96px;
+}
+
+.donut-bg {
+  fill: none;
+  stroke: var(--wf-donut-bg);
+  stroke-width: 11;
+}
+
+.donut-val {
+  fill: none;
+  stroke: var(--wf-green);
+  stroke-width: 11;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.donut-pct {
+  font-size: 21px;
+  font-weight: 800;
+  fill: var(--wf-text-main);
+  text-anchor: middle;
+}
+
+.perf-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--wf-text-muted);
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wf-green);
+}
+
+/* ---------------------------------------------------------------------
+   9. Tasks & Up Next
+   --------------------------------------------------------------------- */
+
+.wf-real-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.view-tasks-link {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wf-orange);
+  text-decoration: none;
+}
+
+.no-tasks-text {
+  font-size: 13px;
+  color: var(--wf-text-muted);
+  margin: 14px 0;
+}
+
+.add-task-quick-btn {
+  display: block;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--wf-subtle-bg);
+  color: var(--wf-text-main);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px dashed var(--wf-subtle-border);
+}
+
+/* ---------------------------------------------------------------------
+   10. Pomodoro & Bottom Links
+   --------------------------------------------------------------------- */
+
+.wf-pomo-action-card {
+  background: linear-gradient(135deg, #FFE79E 0%, #FFBD66 45%, #FFA16E 100%);
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 10px 28px rgba(255, 161, 110, 0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: #38241B;
+}
+
+[data-theme="dark"] .wf-pomo-action-card {
+  background: linear-gradient(135deg, #5C3822 0%, #7E461E 45%, #9A5026 100%) !important;
+  color: #FFF2EB !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3) !important;
+}
+
+.wf-pomo-action-card h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.pomo-sub {
+  font-size: 11.5px;
+  opacity: 0.88;
+  margin: 0;
+}
+
+.pomo-hourglass-icon {
+  font-size: 32px;
+  margin: 2px 0;
+}
+
+.pomo-start-link {
+  background: #ffffff;
+  color: #38241B;
+  border-radius: 999px;
+  padding: 8px 36px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .pomo-start-link {
+  background: #FFF2EB;
+  color: #3A1F10;
+}
+
+.wf-bottom-links-row {
+  display: flex;
+  gap: 12px;
+}
+
+.wf-bottom-btn {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: var(--wf-card-bg);
+  color: var(--wf-text-main);
+  border: 1px solid var(--wf-card-border);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: var(--wf-card-shadow);
+}
