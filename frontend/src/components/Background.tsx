@@ -120,6 +120,7 @@ function SceneDecor({ scene }: { scene: Scene }) {
           <div className="blob b2" />
         </>
       );
+    case "classic":
     case "custom":
       return null;
     case "celebrate":

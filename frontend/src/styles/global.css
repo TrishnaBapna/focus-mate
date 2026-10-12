@@ -1265,3 +1265,87 @@ select option {
 
   .mini-timer { bottom: calc(100px + env(safe-area-inset-bottom)); right: 16px; }
 }
+/* =====================================================================
+   Focus music dock
+   ===================================================================== */
+.music-dock { position: fixed; right: 24px; bottom: 24px; z-index: 56; }
+.music-fab {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffb26b, #ff7a3d);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(255, 122, 61, 0.45);
+}
+.music-fab.playing { background: linear-gradient(135deg, #5fcf80, #38b36a); box-shadow: 0 8px 22px rgba(56, 179, 106, 0.45); }
+
+.eq { display: flex; align-items: flex-end; gap: 3px; height: 20px; }
+.eq i { display: block; width: 4px; border-radius: 2px; background: #fff; animation: eq-bounce 0.9s ease-in-out infinite; }
+.eq i:nth-child(1) { height: 40%; }
+.eq i:nth-child(2) { height: 80%; animation-delay: 0.2s; }
+.eq i:nth-child(3) { height: 55%; animation-delay: 0.4s; }
+@keyframes eq-bounce { 0%, 100% { transform: scaleY(0.4); } 50% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .eq i { animation: none; } }
+
+.music-panel {
+  position: absolute;
+  right: 0;
+  bottom: 66px;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(560px, calc(100vh - 120px));
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--sheet-bg);
+  color: var(--sheet-text);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+}
+.music-panel.open { visibility: visible; opacity: 1; transform: none; }
+.music-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.music-x { width: 28px; height: 28px; display: grid; place-items: center; border: none; border-radius: 50%; background: rgba(120, 120, 120, 0.18); color: inherit; cursor: pointer; }
+.music-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.music-body { display: flex; flex-direction: column; gap: 10px; }
+
+/* Keeps the Spotify player alive (and playing) while it isn't on screen */
+.keep-alive { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+
+.sound-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sound-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: rgba(255, 138, 76, 0.14);
+  color: var(--sheet-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sound-btn.on { border-color: var(--green); background: rgba(95, 207, 128, 0.22); }
+.sound-emoji { font-size: 20px; }
+.vol { display: flex; align-items: center; gap: 8px; }
+.vol input { flex: 1; accent-color: var(--accent); }
+.music-links { display: flex; justify-content: space-between; }
+.music-form { display: flex; flex-direction: column; gap: 10px; }
+.music-form input { padding: 10px 12px; border-radius: 12px; font-size: 13px; font-family: inherit; }
+.music-hint { font-size: 12px; opacity: 0.7; line-height: 1.4; }
+
+/* The floating timer pill moves left to make room for the music button */
+.mini-timer { right: 90px; }
+
+@media (max-width: 768px) {
+  .music-dock { right: 16px; bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .mini-timer { right: 82px; }
+}

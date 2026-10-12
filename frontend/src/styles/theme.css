@@ -1,100 +1,25 @@
-/* =====================================================================
-   FocusMate Design System: Theme Variables
-   High-contrast, accessible palettes for Light, Dark, and System modes
-   ===================================================================== */
-
 :root {
-  color-scheme: light;
-
-  /* Peach & sunrise background gradients */
-  --bg-from: #ffb7ad;
-  --bg-to: #ffe4bd;
-
-  /* Warm orange sidebar & primary buttons */
+  --bg-from: #ff9f9f;
+  --bg-to: #ffdfbd;
   --sidebar: #ff8a4c;
-  --accent: #f47c48;
-  --accent-hover: #e06834;
-
-  /* Frosted White cards - 94% opacity ensures high contrast against any wallpaper */
+  --accent: #ff7a3d;
   --card: rgba(255, 255, 255, 0.94);
-  --card-border: rgba(255, 255, 255, 0.9);
-  --panel-bg: #fffaf6;
-  --shadow: 0 8px 28px rgba(123, 69, 45, 0.10);
+  --text: #3b2a24;
+  --muted: #9a8378;
 
-  /* Deep rich readable text inside cards */
-  --text: #2c1e19;
-  --muted: #6e5b53;
+  --green: #5fcf80;
+  --yellow: #ffe08a;
+  --lavender: #cdb8ff;
+  --sky: #a8d8ff;
 
-  /* Status and decoration */
-  --green: #48bb78;
-  --yellow: #f6ad55;
-  --lavender: #b794f4;
-  --sky: #63b3ed;
-  --red: #ef476f;
-
-  /* Rounded geometry */
-  --radius: 22px;
-
-  /* Inputs: crisp white background with visible borders and dark text */
-  --input-bg: #ffffff;
-  --input-border: #ead8cd;
-  --input-focus-border: #f47c48;
-  --input-text: #2c1e19;
-  --input-placeholder: #8e7a71;
-
-  /* Chips, pills and secondary buttons */
-  --chip-bg: #fff0e6;
-  --chip-border: #ffccb0;
-  --chip-text: #2c1e19;
-  --pill-bg: #ffe8db;
-  --pill-text: #2c1e19;
-
-  /* Sheets & modals */
-  --sheet-bg: #fffaf5;
-  --sheet-text: #2c1e19;
+  --radius: 20px;
+  --shadow: 0 6px 22px rgba(214, 110, 80, 0.12);
 }
 
 [data-theme="dark"] {
-  color-scheme: dark;
-
-  --bg-from: #1e1528;
-  --bg-to: #2a1d36;
-
-  --sidebar: #ff8a4c;
-  --accent: #ff9a68;
-  --accent-hover: #ff8042;
-
-  /* Elegant dark slate cards - 94% opacity with luminous borders */
-  --card: rgba(36, 28, 44, 0.94);
-  --card-border: rgba(255, 255, 255, 0.12);
-  --panel-bg: rgba(255, 255, 255, 0.06);
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-
-  /* Crisp light text inside cards */
-  --text: #fff2eb;
-  --muted: #cbb8ad;
-
-  --green: #68d391;
-  --yellow: #f6e05e;
-  --lavender: #d6bcfa;
-  --sky: #90cdf4;
-  --red: #fc8181;
-
-  /* Inputs: translucent dark container with clean contrast */
-  --input-bg: rgba(255, 255, 255, 0.08);
-  --input-border: rgba(255, 255, 255, 0.22);
-  --input-focus-border: #ff9a68;
-  --input-text: #fff2eb;
-  --input-placeholder: rgba(203, 184, 173, 0.65);
-
-  /* Chips, pills and secondary buttons */
-  --chip-bg: rgba(255, 255, 255, 0.12);
-  --chip-border: rgba(255, 255, 255, 0.2);
-  --chip-text: #fff2eb;
-  --pill-bg: rgba(255, 255, 255, 0.14);
-  --pill-text: #fff2eb;
-
-  /* Sheets & modals */
-  --sheet-bg: #2a2030;
-  --sheet-text: #fff2eb;
+  --bg-from: #2b1d2e;
+  --bg-to: #3d2a2a;
+  --card: rgba(255, 255, 255, 0.1);
+  --text: #fbeee6;
+  --muted: #c3a99c;
 }
