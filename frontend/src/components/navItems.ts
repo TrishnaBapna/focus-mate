@@ -1,27 +1,26 @@
-import type { IconName } from "./Icon";
-
 export interface NavItem {
   to: string;
-  icon: IconName;
+  icon: string;
   label: string;
 }
 
 // Ordered by importance. Small screens show the first few; the rest go under "More".
 export const NAV_ITEMS: NavItem[] = [
-  { to: "/", icon: "grid", label: "Home" },
-  { to: "/focus", icon: "timer", label: "Focus" },
-  { to: "/notes", icon: "file", label: "Notes" },
-  { to: "/assistant", icon: "chat", label: "Assistant" },
-  { to: "/tasks", icon: "list", label: "Tasks" },
-  { to: "/planner", icon: "calendar", label: "Plan" },
-  { to: "/study", icon: "cards", label: "Study" },
-  { to: "/exams", icon: "cap", label: "Exams" },
-  { to: "/subjects", icon: "book", label: "Subjects" },
-  { to: "/achievements", icon: "trophy", label: "Awards" },
-  { to: "/analytics", icon: "chart", label: "Stats" },
+  { to: "/", icon: "🏠", label: "Home" },
+  { to: "/focus", icon: "⏱️", label: "Focus" },
+  { to: "/planner", icon: "📅", label: "Plan" },
+  { to: "/notes", icon: "📝", label: "Notes" },
+  { to: "/assistant", icon: "🦉", label: "Assistant" },
+  { to: "/tasks", icon: "✅", label: "Tasks" },
+  { to: "/study", icon: "🃏", label: "Study" },
+  { to: "/exams", icon: "🎓", label: "Exams" },
+  { to: "/subjects", icon: "📚", label: "Subjects" },
+  { to: "/achievements", icon: "🏆", label: "Awards" },
+  { to: "/analytics", icon: "📊", label: "Stats" },
 ];
 
 // Always visible, never hidden under "More"
-export const SETTINGS_NAV: NavItem = { to: "/settings", icon: "sliders", label: "Settings" };
+export const SETTINGS_NAV: NavItem = { to: "/settings", icon: "⚙️", label: "Settings" };
 
+export const PHONE_NAV_COUNT = 4;
 export const PHONE_COUNT = 4;
