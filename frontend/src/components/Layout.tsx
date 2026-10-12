@@ -6,6 +6,7 @@ import SettingsProvider from "../hooks/SettingsProvider";
 import { useFocus } from "../hooks/useFocus";
 import AppBackground from "./AppBackground";
 import BottomNav from "./BottomNav";
+import { LogoMark } from "./Icon";
 import MiniTimer from "./MiniTimer";
 import MusicDock from "./MusicDock";
 import Sidebar from "./Sidebar";
@@ -19,10 +20,15 @@ function Shell() {
   return (
     <>
       <AppBackground />
-      {!strictActive && <TopBar />}
-      <div className={`app-shell ${strictActive ? "locked" : ""}`}>
+      <div className={`wf-window ${strictActive ? "locked" : ""}`}>
+        {!strictActive && (
+          <div className="wf-logo">
+            <LogoMark />
+          </div>
+        )}
+        {!strictActive && <TopBar />}
         {!strictActive && <Sidebar />}
-        <main className="app-main">
+        <main className="wf-main app-main">
           <Outlet />
         </main>
       </div>
