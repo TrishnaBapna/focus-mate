@@ -88,6 +88,12 @@ const PATHS = {
       <path d="M10 20a2 2 0 0 0 4 0" />
     </>
   ),
+  chat: (
+    <>
+      <path d="M4 12a8 8 0 1 1 3.2 6.4L4 20l1.1-3.6A8 8 0 0 1 4 12z" />
+      <path d="M9 11h6M9 14h4" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   x: <path d="M6 6l12 12M18 6 6 18" />,

@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import TimeBackground from "./components/TimeBackground";
 import Achievements from "./pages/Achievements";
 import Analytics from "./pages/Analytics";
+import Assistant from "./pages/Assistant";
 import Dashboard from "./pages/Dashboard";
 import DeckPage from "./pages/DeckPage";
 import Exams from "./pages/Exams";
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/notes/:id" element={<NoteEditor />} />
           <Route path="/study" element={<Study />} />
           <Route path="/study/:deckId" element={<DeckPage />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />

@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/", icon: "grid", label: "Home" },
   { to: "/focus", icon: "timer", label: "Focus" },
   { to: "/notes", icon: "file", label: "Notes" },
+  { to: "/assistant", icon: "chat", label: "Assistant" },
   { to: "/tasks", icon: "list", label: "Tasks" },
   { to: "/planner", icon: "calendar", label: "Plan" },
   { to: "/study", icon: "cards", label: "Study" },
