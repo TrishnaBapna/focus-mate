@@ -8,4 +8,5 @@ export interface Settings {
   theme: ThemeChoice;
   background: BackgroundChoice;
   customBackgroundId?: string; // the person's own photo, kept in the media area
+  blockList?: string[]; // apps and sites to stay away from while focusing
 }

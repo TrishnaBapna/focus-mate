@@ -18,6 +18,7 @@ const GOAL_PRESETS = [60, 120, 180, 240];
 
 const BACKGROUNDS: { id: BackgroundChoice; label: string }[] = [
   { id: "auto", label: "Automatic" },
+  { id: "classic", label: "Classic" },
   { id: "sunrise", label: "Sunrise" },
   { id: "afternoon", label: "Afternoon" },
   { id: "sunset", label: "Sunset" },

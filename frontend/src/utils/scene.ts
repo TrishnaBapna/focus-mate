@@ -1,4 +1,5 @@
 export type Scene =
+  | "classic"
   | "sunrise"
   | "afternoon"
   | "sunset"
@@ -9,6 +10,7 @@ export type Scene =
   | "custom";
 
 export const SCENES: Scene[] = [
+  "classic",
   "sunrise",
   "afternoon",
   "sunset",

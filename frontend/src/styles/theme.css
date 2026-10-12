@@ -1,9 +1,9 @@
 :root {
-  --bg-from: #ffb199;
-  --bg-to: #ffe3c2;
+  --bg-from: #ff9f9f;
+  --bg-to: #ffdfbd;
   --sidebar: #ff8a4c;
   --accent: #ff7a3d;
-  --card: rgba(255, 255, 255, 0.75);
+  --card: rgba(255, 255, 255, 0.94);
   --text: #3b2a24;
   --muted: #9a8378;
 
@@ -13,45 +13,13 @@
   --sky: #a8d8ff;
 
   --radius: 20px;
-  --shadow: 0 8px 30px rgba(255, 138, 76, 0.15);
+  --shadow: 0 6px 22px rgba(214, 110, 80, 0.12);
 }
 
 [data-theme="dark"] {
   --bg-from: #2b1d2e;
   --bg-to: #3d2a2a;
-  --card: rgba(255, 255, 255, 0.08);
+  --card: rgba(255, 255, 255, 0.1);
   --text: #fbeee6;
   --muted: #c3a99c;
-}
-
-:root {
-  color-scheme: light;
-
-  /* Background and surfaces */
-  --bg-from: #fff8f2;
-  --bg-to: #fff0e6;
-  --sidebar: #e87545;
-  --card: rgba(255, 255, 255, 0.94);
-
-  /* Text */
-  --text: #302820;
-  --muted: #756b63;
-
-  /* Accent and status colours */
-  --accent: #c9572c;
-  --green: #328653;
-  --yellow: #f5d77e;
-  --lavender: #cdb8ff;
-  --sky: #a8d8ff;
-
-  /* Shared design tokens */
-  --radius: 18px;
-  --shadow: 0 4px 18px rgba(67, 43, 27, 0.07);
-
-  --input-bg: #ffffff;
-  --input-border: #d9c9bd;
-  --input-text: #302820;
-  --chip-bg: #fff7f1;
-  --chip-text: #302820;
-  --panel-bg: #fff8f2;
 }

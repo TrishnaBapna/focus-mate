@@ -1,11 +1,14 @@
 import { Outlet } from "react-router-dom";
 import AchievementsProvider from "../hooks/AchievementsProvider";
 import FocusProvider from "../hooks/FocusProvider";
+import MusicProvider from "../hooks/MusicProvider";
 import SettingsProvider from "../hooks/SettingsProvider";
 import { useFocus } from "../hooks/useFocus";
 import AppBackground from "./AppBackground";
 import BottomNav from "./BottomNav";
+import { LogoMark } from "./Icon";
 import MiniTimer from "./MiniTimer";
+import MusicDock from "./MusicDock";
 import Sidebar from "./Sidebar";
 import StrictGuard from "./StrictGuard";
 import StrictOverlay from "./StrictOverlay";
@@ -17,15 +20,21 @@ function Shell() {
   return (
     <>
       <AppBackground />
-      {!strictActive && <TopBar />}
-      <div className={`app-shell ${strictActive ? "locked" : ""}`}>
+      <div className={`wf-window ${strictActive ? "locked" : ""}`}>
+        {!strictActive && (
+          <div className="wf-logo">
+            <LogoMark />
+          </div>
+        )}
+        {!strictActive && <TopBar />}
         {!strictActive && <Sidebar />}
-        <main className="app-main">
+        <main className="wf-main app-main">
           <Outlet />
         </main>
       </div>
       {!strictActive && <BottomNav />}
       <MiniTimer />
+      <MusicDock />
       <StrictGuard />
       <StrictOverlay />
     </>
@@ -37,7 +46,9 @@ export default function Layout() {
     <SettingsProvider>
       <FocusProvider>
         <AchievementsProvider>
-          <Shell />
+          <MusicProvider>
+            <Shell />
+          </MusicProvider>
         </AchievementsProvider>
       </FocusProvider>
     </SettingsProvider>

@@ -1,4 +1,5 @@
 import { useAchievements } from "../hooks/useAchievements";
+import GardenCard from "../components/GardenCard";
 import { formatProgress } from "../utils/achievements";
 import { formatDuration } from "../utils/time";
 
@@ -9,6 +10,8 @@ export default function Achievements() {
   return (
     <>
       <h1 className="page-title">Achievements 🏆</h1>
+
+      <GardenCard />
 
       <section className="card level-card">
         <div className="level-head">

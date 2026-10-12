@@ -15,17 +15,21 @@ export default function AppBackground() {
   const forced = params.get("scene"); // handy for testing: /?scene=night
   const { url: customUrl } = useMediaUrl(settings.customBackgroundId || undefined);
 
-  let scene: Scene = sceneForHour(hour);
-  if (phase === "focus") scene = "focus";
-  else if (phase === "break") scene = "break";
-  else if (phase === "focusDone" && pathname === "/focus") scene = "celebrate";
+  const choice = settings.background;
+  const base: Scene = choice === "classic" ? "classic" : sceneForHour(hour);
+  let scene: Scene = base;
 
-  // A background chosen in Settings always wins over the automatic one
-  if (settings.background !== "auto") scene = settings.background;
+  if (choice === "auto" || choice === "classic") {
+    // These two follow what you're doing: focus, break, and celebration scenes
+    if (phase === "focus") scene = "focus";
+    else if (phase === "break") scene = "break";
+    else if (phase === "focusDone" && pathname === "/focus") scene = "celebrate";
+  } else {
+    scene = choice; // a background picked in Settings stays fixed
+  }
+
   if (isScene(forced)) scene = forced;
-
-  // No photo yet (or it's still loading)? Fall back to the time-of-day scene
-  if (scene === "custom" && !customUrl) scene = sceneForHour(hour);
+  if (scene === "custom" && !customUrl) scene = base;
 
   return <Background scene={scene} customUrl={customUrl ?? undefined} />;
 }
