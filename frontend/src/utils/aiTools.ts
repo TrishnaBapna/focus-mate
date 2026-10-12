@@ -72,6 +72,15 @@ export const TOOLS: AiTool[] = [
   },
 ];
 
+export const LONG_NOTE_CHARS = 6000;
+
+export function tokensFor(tool: AiTool, noteText?: string): number {
+  if (noteText && noteText.length > LONG_NOTE_CHARS && "longMaxTokens" in tool && typeof (tool as Record<string, unknown>).longMaxTokens === "number") {
+    return (tool as Record<string, unknown>).longMaxTokens as number;
+  }
+  return tool.maxTokens;
+}
+
 export function buildPrompt(tool: AiTool, noteText: string) {
   return `${tool.instruction}\n\nNOTE:\n"""\n${noteText.slice(0, 20000)}\n"""`;
 }
