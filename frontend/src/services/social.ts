@@ -40,9 +40,16 @@ export function updateWeekTotal(uid: string, weekKey: string, weekSeconds: numbe
 }
 
 export function listenToMyProfile(uid: string, cb: (p: Profile | null) => void) {
-  return onSnapshot(doc(db, "profiles", uid), (snap) => {
-    cb(snap.exists() ? { id: snap.id, ...(snap.data() as Omit<Profile, "id">) } : null);
-  });
+  return onSnapshot(
+    doc(db, "profiles", uid),
+    (snap) => {
+      cb(snap.exists() ? { id: snap.id, ...(snap.data() as Omit<Profile, "id">) } : null);
+    },
+    (err) => {
+      console.warn("listenToMyProfile error:", err);
+      cb(null);
+    }
+  );
 }
 
 export function listenToProfiles(uids: string[], cb: (p: Profile[]) => void) {
@@ -51,16 +58,30 @@ export function listenToProfiles(uids: string[], cb: (p: Profile[]) => void) {
     return () => {};
   }
   const q = query(collection(db, "profiles"), where(documentId(), "in", uids));
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Profile, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Profile, "id">) })));
+    },
+    (err) => {
+      console.warn("listenToProfiles error:", err);
+      cb([]);
+    }
+  );
 }
 
 export function listenToFriendships(uid: string, cb: (f: Friendship[]) => void) {
   const q = query(collection(db, "friendRequests"), where("members", "array-contains", uid));
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Friendship, "id">) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Friendship, "id">) })));
+    },
+    (err) => {
+      console.warn("listenToFriendships error:", err);
+      cb([]);
+    }
+  );
 }
 
 export async function sendRequest(

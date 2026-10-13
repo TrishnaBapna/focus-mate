@@ -9,13 +9,20 @@ const achievementsDoc = (uid: string) => doc(db, "users", uid, "settings", "achi
 
 // Calls back with null when the document doesn't exist yet.
 export function listenToUnlocked(uid: string, callback: (doc: UnlockedDoc | null) => void) {
-  return onSnapshot(achievementsDoc(uid), (snap) => {
-    callback(
-      snap.exists()
-        ? { unlocked: (snap.data().unlocked ?? {}) as Record<string, string> }
-        : null
-    );
-  });
+  return onSnapshot(
+    achievementsDoc(uid),
+    (snap) => {
+      callback(
+        snap.exists()
+          ? { unlocked: (snap.data().unlocked ?? {}) as Record<string, string> }
+          : null
+      );
+    },
+    (err) => {
+      console.warn("listenToUnlocked error:", err);
+      callback(null);
+    }
+  );
 }
 
 export function saveUnlocked(uid: string, entries: Record<string, string>) {

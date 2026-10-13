@@ -37,12 +37,18 @@ export function deleteNote(uid: string, id: string) {
 
 export function listenToNotes(uid: string, callback: (notes: Note[]) => void) {
   const q = query(notesRef(uid), orderBy("updatedAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Note, "id">),
-      }))
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Note, "id">),
+        }))
+      );
+    },
+    (err) => {
+      console.warn("listenToNotes error:", err);
+    }
+  );
 }

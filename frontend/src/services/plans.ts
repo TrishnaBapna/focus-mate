@@ -25,12 +25,18 @@ export function deletePlan(uid: string, id: string) {
 
 export function listenToPlans(uid: string, callback: (plans: Plan[]) => void) {
   const q = query(plansRef(uid), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Plan, "id">),
-      }))
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Plan, "id">),
+        }))
+      );
+    },
+    (err) => {
+      console.warn("listenToPlans error:", err);
+    }
+  );
 }

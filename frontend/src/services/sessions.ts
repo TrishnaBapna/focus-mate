@@ -22,12 +22,18 @@ export function listenToSessions(
   callback: (sessions: FocusSession[]) => void
 ) {
   const q = query(sessionsRef(uid), orderBy("completedAt", "desc"), limit(count));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<FocusSession, "id">),
-      }))
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<FocusSession, "id">),
+        }))
+      );
+    },
+    (err) => {
+      console.warn("listenToSessions error:", err);
+    }
+  );
 }

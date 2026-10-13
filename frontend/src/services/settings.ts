@@ -8,9 +8,15 @@ export function listenToSettings(
   uid: string,
   callback: (settings: Partial<Settings> | undefined) => void
 ) {
-  return onSnapshot(settingsDoc(uid), (snap) => {
-    callback(snap.exists() ? (snap.data() as Partial<Settings>) : undefined);
-  });
+  return onSnapshot(
+    settingsDoc(uid),
+    (snap) => {
+      callback(snap.exists() ? (snap.data() as Partial<Settings>) : undefined);
+    },
+    (err) => {
+      console.warn("listenToSettings error:", err);
+    }
+  );
 }
 
 export function saveSettings(uid: string, patch: Partial<Settings>) {

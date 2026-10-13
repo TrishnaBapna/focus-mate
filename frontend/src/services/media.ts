@@ -21,11 +21,16 @@ export async function saveMedia(uid: string, blob: Blob): Promise<string> {
 }
 
 export async function loadMedia(uid: string, id: string): Promise<Blob | null> {
-  const snap = await getDoc(doc(db, "users", uid, "media", id));
-  if (!snap.exists()) return null;
-  const data = snap.data();
-  const bytes = (data.data as Bytes).toUint8Array();
-  return new Blob([new Uint8Array(bytes)], { type: data.mime as string });
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "media", id));
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    const bytes = (data.data as Bytes).toUint8Array();
+    return new Blob([new Uint8Array(bytes)], { type: data.mime as string });
+  } catch (err) {
+    console.warn("Failed to load media:", err);
+    return null;
+  }
 }
 
 export function deleteMedia(uid: string, id: string) {

@@ -31,12 +31,18 @@ export function deleteExam(uid: string, id: string) {
 // Soonest exam first
 export function listenToExams(uid: string, callback: (exams: Exam[]) => void) {
   const q = query(examsRef(uid), orderBy("date"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => {
-        const data = d.data() as Omit<Exam, "id">;
-        return { id: d.id, ...data, syllabus: data.syllabus ?? [] };
-      })
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => {
+          const data = d.data() as Omit<Exam, "id">;
+          return { id: d.id, ...data, syllabus: data.syllabus ?? [] };
+        })
+      );
+    },
+    (err) => {
+      console.warn("listenToExams error:", err);
+    }
+  );
 }

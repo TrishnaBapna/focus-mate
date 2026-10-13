@@ -26,12 +26,18 @@ export function listenToSubjects(
   callback: (subjects: Subject[]) => void
 ) {
   const q = query(subjectsRef(uid), orderBy("createdAt"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Subject, "id">),
-      }))
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Subject, "id">),
+        }))
+      );
+    },
+    (err) => {
+      console.warn("listenToSubjects error:", err);
+    }
+  );
 }

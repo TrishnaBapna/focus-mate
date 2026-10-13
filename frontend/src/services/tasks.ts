@@ -38,12 +38,18 @@ export function deleteTask(uid: string, id: string) {
 
 export function listenToTasks(uid: string, callback: (tasks: Task[]) => void) {
   const q = query(tasksRef(uid), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Task, "id">),
-      }))
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Task, "id">),
+        }))
+      );
+    },
+    (err) => {
+      console.warn("listenToTasks error:", err);
+    }
+  );
 }
