@@ -77,3 +77,21 @@ export interface Plan {
   repeat: PlanRepeat;
   createdAt?: Timestamp | null;
 }
+
+export interface Profile {
+  id: string;
+  nickname: string;
+  nicknameLower: string;
+  weekKey?: string;
+  weekSeconds?: number;
+}
+
+export interface Friendship {
+  id: string;
+  from: string;
+  to: string;
+  fromNickname: string;
+  toNickname: string;
+  members: string[];
+  status: "pending" | "accepted";
+}

@@ -13,6 +13,7 @@ import Sidebar from "./Sidebar";
 import StrictGuard from "./StrictGuard";
 import StrictOverlay from "./StrictOverlay";
 import TopBar from "./TopBar";
+import { useSyncProfile } from "../hooks/useSocial";
 
 function Shell() {
   const { strictActive } = useFocus();
@@ -54,3 +55,4 @@ export default function Layout() {
     </SettingsProvider>
   );
 }
+  useSyncProfile();
