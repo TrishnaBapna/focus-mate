@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 
 export type ScreenSize = "phone" | "tablet" | "desktop";
 
-// On desktop show all items so nothing is hidden
+// How many menu icons to show before "More": 4 normally, up to 7 on big monitors
 function measure() {
   const w = window.innerWidth;
+  const h = window.innerHeight;
   const size: ScreenSize = w < 768 ? "phone" : w < 1100 ? "tablet" : "desktop";
-  const count = size === "desktop" ? 14 : size === "tablet" ? 6 : 4;
+  const count = size === "desktop" && w >= 1280 && h >= 900 ? 7 : 4;
   return { size, count };
 }
 
