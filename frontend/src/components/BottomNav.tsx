@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import Icon from "./Icon";
-import { NAV_ITEMS, PHONE_COUNT } from "./navItems";
+import { NAV_ITEMS, PHONE_NAV_COUNT } from "./navItems";
 
 // Only visible on phones (see the media query in global.css)
 export default function BottomNav() {
   const [open, setOpen] = useState(false);
-  const shown = NAV_ITEMS.slice(0, PHONE_COUNT);
-  const rest = NAV_ITEMS.slice(PHONE_COUNT);
+  const shown = NAV_ITEMS.slice(0, PHONE_NAV_COUNT);
+  const rest = NAV_ITEMS.slice(PHONE_NAV_COUNT);
 
   return (
     <>
@@ -17,7 +16,7 @@ export default function BottomNav() {
         <div className="more-sheet">
           {rest.map((l) => (
             <NavLink key={l.to} to={l.to} onClick={() => setOpen(false)}>
-              <Icon name={l.icon} size={20} />
+              <span className="bn-icon">{l.icon}</span>
               {l.label}
             </NavLink>
           ))}
@@ -32,16 +31,12 @@ export default function BottomNav() {
             end={l.to === "/"}
             onClick={() => setOpen(false)}
           >
-            <span className="bn-icon">
-              <Icon name={l.icon} size={22} />
-            </span>
+            <span className="bn-icon">{l.icon}</span>
             <span className="bn-label">{l.label}</span>
           </NavLink>
         ))}
         <button className={`bn-more ${open ? "open" : ""}`} onClick={() => setOpen(!open)}>
-          <span className="bn-icon">
-            <Icon name="dots" size={22} />
-          </span>
+          <span className="bn-icon">☰</span>
           <span className="bn-label">More</span>
         </button>
       </nav>
