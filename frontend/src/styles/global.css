@@ -1601,29 +1601,3 @@ button,
   .chat-box { height: calc(100dvh - 210px); }
   .bubble { max-width: 94%; }
 }
-
-/* =====================================================================
-   Friends
-   ===================================================================== */
-.friends-card { display: flex; flex-direction: column; gap: 10px; }
-.friends-card h4 { margin-top: 10px; }
-.friend-form { display: flex; gap: 10px; }
-.friend-input {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 138, 76, 0.3);
-  background: rgba(255, 255, 255, 0.8);
-  font-size: 15px;
-  font-family: inherit;
-}
-.leaderboard { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.leaderboard li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; }
-.leaderboard li.me { background: rgba(255, 138, 76, 0.18); }
-.rank { width: 28px; text-align: center; font-size: 18px; }
-.lb-name { flex: 1; }
-.delete-btn.static { position: static; }
-.request-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.request-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.btn.small { padding: 6px 14px; font-size: 14px; }
-.nick-line { margin-top: 10px; }

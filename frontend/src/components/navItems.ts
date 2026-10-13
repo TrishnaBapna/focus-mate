@@ -11,7 +11,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/planner", icon: "📅", label: "Plan" },
   { to: "/notes", icon: "📝", label: "Notes" },
   { to: "/assistant", icon: "🦉", label: "Assistant" },
-  { to: "/friends", icon: "👥", label: "Friends" },
   { to: "/tasks", icon: "✅", label: "Tasks" },
   { to: "/study", icon: "🃏", label: "Study" },
   { to: "/exams", icon: "🎓", label: "Exams" },

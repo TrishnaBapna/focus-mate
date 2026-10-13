@@ -9,7 +9,6 @@ import Dashboard from "./pages/Dashboard";
 import DeckPage from "./pages/DeckPage";
 import Exams from "./pages/Exams";
 import Focus from "./pages/Focus";
-import Friends from "./pages/Friends";
 import Login from "./pages/Login";
 import NoteEditor from "./pages/NoteEditor";
 import Notes from "./pages/Notes";
@@ -39,7 +38,6 @@ export default function App() {
           <Route path="/planner" element={<Planner />} />
           <Route path="/exams" element={<Exams />} />
           <Route path="/focus" element={<Focus />} />
-          <Route path="/friends" element={<Friends />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/notes/:id" element={<NoteEditor />} />
           <Route path="/study" element={<Study />} />

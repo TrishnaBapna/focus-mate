@@ -4,7 +4,6 @@ import FocusProvider from "../hooks/FocusProvider";
 import MusicProvider from "../hooks/MusicProvider";
 import SettingsProvider from "../hooks/SettingsProvider";
 import { useFocus } from "../hooks/useFocus";
-import { useSyncProfile } from "../hooks/useSocial";
 import AppBackground from "./AppBackground";
 import BottomNav from "./BottomNav";
 import MiniTimer from "./MiniTimer";
@@ -16,7 +15,6 @@ import TopBar from "./TopBar";
 
 function Shell() {
   const { strictActive } = useFocus();
-  useSyncProfile();
 
   return (
     <>

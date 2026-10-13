@@ -110,9 +110,6 @@ export default function Dashboard() {
       <StudyDueCard />
 
       <div className="home-links">
-        <Link to="/friends" className="link-btn">
-          🏆 Friends Leaderboard
-        </Link>
         <Link to="/analytics" className="link-btn">
           📊 Full stats
         </Link>
