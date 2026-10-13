@@ -4,32 +4,27 @@ import FocusProvider from "../hooks/FocusProvider";
 import MusicProvider from "../hooks/MusicProvider";
 import SettingsProvider from "../hooks/SettingsProvider";
 import { useFocus } from "../hooks/useFocus";
+import { useSyncProfile } from "../hooks/useSocial";
 import AppBackground from "./AppBackground";
 import BottomNav from "./BottomNav";
-import { LogoMark } from "./Icon";
 import MiniTimer from "./MiniTimer";
 import MusicDock from "./MusicDock";
 import Sidebar from "./Sidebar";
 import StrictGuard from "./StrictGuard";
 import StrictOverlay from "./StrictOverlay";
 import TopBar from "./TopBar";
-import { useSyncProfile } from "../hooks/useSocial";
 
 function Shell() {
   const { strictActive } = useFocus();
+  useSyncProfile();
 
   return (
     <>
       <AppBackground />
-      <div className={`wf-window ${strictActive ? "locked" : ""}`}>
-        {!strictActive && (
-          <div className="wf-logo">
-            <LogoMark />
-          </div>
-        )}
-        {!strictActive && <TopBar />}
+      {!strictActive && <TopBar />}
+      <div className={`app-shell ${strictActive ? "locked" : ""}`}>
         {!strictActive && <Sidebar />}
-        <main className="wf-main app-main">
+        <main className="app-main">
           <Outlet />
         </main>
       </div>
@@ -55,4 +50,3 @@ export default function Layout() {
     </SettingsProvider>
   );
 }
-  useSyncProfile();
