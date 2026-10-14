@@ -2085,3 +2085,45 @@ button,
   .chat-box { height: calc(100dvh - 210px); }
   .bubble { max-width: 94%; }
 }
+
+/* =====================================================================
+   Friends and leaderboards
+   ===================================================================== */
+.friends-stack { display: flex; flex-direction: column; gap: 16px; max-width: 860px; }
+.friends-welcome { max-width: 640px; display: flex; flex-direction: column; gap: 12px; }
+.share-list { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.friends-message { padding: 10px 14px; border-radius: 12px; background: rgba(95, 207, 128, 0.2); font-size: 14px; }
+
+.me-card { display: flex; flex-direction: column; gap: 12px; }
+.me-head { display: flex; align-items: center; gap: 12px; }
+.me-emoji { font-size: 38px; line-height: 1; }
+.me-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+.identity-form { display: flex; flex-direction: column; gap: 12px; }
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 6px; }
+.emoji-btn { height: 42px; border: 2px solid transparent; border-radius: 12px; background: rgba(120, 120, 120, 0.12); font-size: 22px; cursor: pointer; }
+.emoji-btn.on { border-color: var(--accent); background: rgba(255, 138, 76, 0.2); }
+.nick-row { display: flex; gap: 8px; }
+.nick-row input { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 14px; font-size: 15px; font-family: inherit; }
+.parent-note { padding: 10px 14px; border-radius: 12px; background: rgba(255, 178, 107, 0.25); font-size: 13px; line-height: 1.45; }
+.agree { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; cursor: pointer; }
+.agree input { margin-top: 2px; }
+
+.group-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 16px; }
+.group-forms .card { display: flex; flex-direction: column; gap: 10px; }
+.group-forms input { padding: 10px 14px; border-radius: 14px; font-size: 15px; font-family: inherit; }
+.group-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 16px; align-items: start; }
+.group-card { display: flex; flex-direction: column; gap: 12px; }
+.group-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.group-head h3 { margin-bottom: 2px; }
+.code-pill { padding: 8px 14px; border: 2px dashed var(--accent); border-radius: 12px; background: transparent; color: var(--accent); font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 800; letter-spacing: 2px; cursor: pointer; }
+
+.board { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.board-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(120, 120, 120, 0.08); }
+.board-row.me { background: rgba(255, 138, 76, 0.2); box-shadow: inset 0 0 0 2px rgba(255, 138, 76, 0.5); }
+.board-rank { width: 28px; text-align: center; font-weight: 800; font-size: 14px; }
+.board-emoji { font-size: 22px; }
+.board-name { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.board-name strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-name small { font-size: 11px; color: var(--muted); }
+.board-time { font-size: 13px; font-weight: 700; white-space: nowrap; }

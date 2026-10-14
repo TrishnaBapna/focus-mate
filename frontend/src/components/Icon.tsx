@@ -94,6 +94,14 @@ const PATHS = {
       <path d="M9 11h6M9 14h4" />
     </>
   ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20a6 6 0 0 1 12 0" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M16 14.5a5 5 0 0 1 5 5.5" />
+    </>
+  ),
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   x: <path d="M6 6l12 12M18 6 6 18" />,

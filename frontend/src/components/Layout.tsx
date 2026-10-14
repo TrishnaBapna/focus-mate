@@ -3,6 +3,7 @@ import AchievementsProvider from "../hooks/AchievementsProvider";
 import FocusProvider from "../hooks/FocusProvider";
 import MusicProvider from "../hooks/MusicProvider";
 import SettingsProvider from "../hooks/SettingsProvider";
+import SocialProvider from "../hooks/SocialProvider";
 import { useFocus } from "../hooks/useFocus";
 import AppBackground from "./AppBackground";
 import BottomNav from "./BottomNav";
@@ -47,7 +48,9 @@ export default function Layout() {
       <FocusProvider>
         <AchievementsProvider>
           <MusicProvider>
-            <Shell />
+            <SocialProvider>
+              <Shell />
+            </SocialProvider>
           </MusicProvider>
         </AchievementsProvider>
       </FocusProvider>

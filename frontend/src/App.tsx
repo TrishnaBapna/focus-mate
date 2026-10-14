@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import DeckPage from "./pages/DeckPage";
 import Exams from "./pages/Exams";
 import Focus from "./pages/Focus";
+import Friends from "./pages/Friends";
 import Login from "./pages/Login";
 import NoteEditor from "./pages/NoteEditor";
 import Notes from "./pages/Notes";
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/study" element={<Study />} />
           <Route path="/study/:deckId" element={<DeckPage />} />
           <Route path="/assistant" element={<Assistant />} />
+          <Route path="/friends" element={<Friends />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
