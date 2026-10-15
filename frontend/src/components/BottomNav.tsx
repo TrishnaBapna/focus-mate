@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import Icon from "./Icon";
-import { NAV_ITEMS, PHONE_COUNT } from "./navItems";
+import { NAV_ITEMS } from "./navItems";
+import { useNavLayout } from "../hooks/useNavLayout";
 
 // Only visible on phones (see the media query in global.css)
 export default function BottomNav() {
+  const { phoneCount } = useNavLayout();
   const [open, setOpen] = useState(false);
-  const shown = NAV_ITEMS.slice(0, PHONE_COUNT);
-  const rest = NAV_ITEMS.slice(PHONE_COUNT);
+  const shown = NAV_ITEMS.slice(0, phoneCount);
+  const rest = NAV_ITEMS.slice(phoneCount);
 
   return (
     <>
