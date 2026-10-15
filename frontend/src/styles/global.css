@@ -634,7 +634,14 @@ a { color: var(--accent); }
 }
 
 /* ---------- Exams ---------- */
-.exam-form { max-width: 760px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }
+.exam-form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(160px, 1.2fr) minmax(150px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+}
 .exam-form input, .exam-form select {
   padding: 10px 14px;
   border-radius: 14px;
@@ -643,9 +650,14 @@ a { color: var(--accent); }
   font-size: 15px;
   font-family: inherit;
 }
-.exam-form .exam-name-input { flex: 1; min-width: 220px; }
+.exam-form .exam-name-input { width: 100%; min-width: 0; }
 
-.exam-list { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.exam-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
 .past-title { margin: 28px 0 12px; color: var(--muted); }
 .exam-card { display: flex; flex-direction: column; gap: 12px; }
 .exam-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
@@ -1039,7 +1051,14 @@ a.suggestion:hover { background: rgba(255, 138, 76, 0.22); }
 .report-suggestion p { margin-top: 4px; line-height: 1.5; }
 
 /* ---------- Study (flashcards) ---------- */
-.deck-form { max-width: 760px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }
+.deck-form {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+}
 .deck-form input, .deck-form select, .card-form input, .card-form textarea, .card-edit input, .save-cards input, .save-cards select {
   padding: 10px 14px;
   border-radius: 14px;
@@ -1048,9 +1067,9 @@ a.suggestion:hover { background: rgba(255, 138, 76, 0.22); }
   font-size: 15px;
   font-family: inherit;
 }
-.deck-form .deck-name-input { flex: 1; min-width: 220px; }
+.deck-form .deck-name-input { width: 100%; min-width: 0; }
 
-.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .deck-card { display: flex; flex-direction: column; gap: 10px; }
 .deck-title { font-size: 18px; font-weight: 800; }
 .deck-counts { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1913,6 +1932,52 @@ button,
 .unblock-box { background: rgba(0, 0, 0, 0.03); }
 .shield-overlay-card { max-width: 440px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
+.block-tabs { display: flex; gap: 8px; margin: 8px 0; }
+.block-tab-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 138, 76, 0.35);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.block-tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(255, 122, 61, 0.3);
+}
+.phone-feature-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(95, 207, 128, 0.18);
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.phone-step-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.04);
+}
+[data-theme="dark"] .phone-step-card, [data-scene="night"] .phone-step-card {
+  background: rgba(255, 255, 255, 0.06);
+}
+.step-title {
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
 /* Today's tasks */
 .wf-task-list { list-style: none; display: flex; flex-direction: column; }
 .wf-task { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(120, 120, 120, 0.14); }
@@ -1996,16 +2061,24 @@ button,
 }
 
 @media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
   .wf-window {
     display: block;
     margin: 0;
     padding: 8px 10px calc(92px + env(safe-area-inset-bottom));
+    width: 100% !important;
+    max-width: 100vw !important;
     min-height: 100vh;
     border: none;
     border-radius: 0;
     background: none;
     box-shadow: none;
     backdrop-filter: none;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
   }
   .wf-logo, .wf-rail { display: none; }
   .wf-topbar { position: sticky; top: 6px; z-index: 40; margin-bottom: 12px; padding: 8px 12px; border-radius: 16px; }
@@ -2014,7 +2087,184 @@ button,
   .focus-mode-label { display: none; }
   .focus-mode { padding: 6px; }
   .bell-pop { position: fixed; left: 10px; right: 10px; top: 60px; width: auto; max-width: none; }
-  .wf-card { padding: 15px 16px; border-radius: 18px; }
+  
+  .wf-main, .app-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+  }
+  .card, .wf-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 15px 16px;
+    border-radius: 18px;
+    box-sizing: border-box !important;
+  }
+
+  /* --- EXAMS TAB: No empty left/right/center gaps on mobile --- */
+  .exam-form {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+    box-sizing: border-box !important;
+  }
+  .exam-form input,
+  .exam-form select,
+  .exam-form .exam-name-input,
+  .exam-form button {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .exam-list {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 14px !important;
+  }
+  .exam-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+  .exam-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .topic-form {
+    display: flex !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  .topic-form input {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  /* --- TASKS TAB: Clean vertical stack, no awkward wrapping --- */
+  .app-main:has(.task-form) {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 16px !important;
+  }
+  .task-form {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+  }
+  .task-title-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .task-form-row {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+  .task-form-row select,
+  .task-form-row input,
+  .task-form .minutes-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .task-form .mode-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    width: 100% !important;
+    gap: 6px !important;
+  }
+  .task-form .mode-tabs .chip {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 8px 4px !important;
+  }
+  .task-form .btn {
+    width: 100% !important;
+  }
+  .task-section {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* --- STUDY & DECKS TAB --- */
+  .deck-form {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+  }
+  .deck-form input,
+  .deck-form select,
+  .deck-form .deck-name-input,
+  .deck-form button {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .deck-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 14px !important;
+  }
+  .deck-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .study-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 12px 0 !important;
+  }
+
+  /* --- PLANNER & SUBJECTS TAB --- */
+  .plan-form, .subject-form, .card-form {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+  }
+  .plan-form select, .plan-form input, .plan-form button,
+  .subject-form input, .subject-form button {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .plan-form-row {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+  .settings-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 14px !important;
+  }
+  .notes-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
 }
 
 @media (max-width: 560px) {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSettings } from "../hooks/useSettings";
 import Icon from "./Icon";
+import { playDistractionBeep } from "./StrictOverlay";
 
 // Supported distracting apps and domains
 const TILES: Record<string, { emoji: string; bg: string; domain: string }> = {
@@ -26,6 +27,8 @@ export default function BlockListCard() {
   const [adding, setAdding] = useState(false);
   const [custom, setCustom] = useState("");
   const [showSystemGuide, setShowSystemGuide] = useState(false);
+  const [blockTab, setBlockTab] = useState<"phone" | "desktop">("phone");
+  const [testedSound, setTestedSound] = useState(false);
   const [copiedBlock, setCopiedBlock] = useState(false);
   const [copiedUnblock, setCopiedUnblock] = useState(false);
 
@@ -135,26 +138,85 @@ export default function BlockListCard() {
       {showSystemGuide && (
         <div className="system-block-card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong>🛡️ Enforce Real System-Wide Blocking</strong>
+            <strong>🛡️ Focus Shield & Blocker Guide</strong>
             <button className="link-btn" onClick={() => setShowSystemGuide(false)}>✕</button>
           </div>
-          <p className="small muted">
-            Want to block {list.slice(0, 3).join(", ") || "YouTube"} across all browsers and apps on your device while you study? Run this 1-line command in your Mac Terminal:
-          </p>
-          <div className="code-box">
-            <code>{macBlockCommand}</code>
-            <button className="btn small" onClick={() => copyText(macBlockCommand, true)}>
-              {copiedBlock ? "Copied! ✓" : "Copy Block Command"}
+
+          <div className="block-tabs">
+            <button
+              type="button"
+              className={`block-tab-btn ${blockTab === "phone" ? "active" : ""}`}
+              onClick={() => setBlockTab("phone")}
+            >
+              📱 Phone (No Terminal)
+            </button>
+            <button
+              type="button"
+              className={`block-tab-btn ${blockTab === "desktop" ? "active" : ""}`}
+              onClick={() => setBlockTab("desktop")}
+            >
+              💻 Mac / PC (Terminal)
             </button>
           </div>
-          <div className="code-box unblock-box" style={{ marginTop: "6px" }}>
-            <code>{macUnblockCommand}</code>
-            <button className="btn small secondary" onClick={() => copyText(macUnblockCommand, false)}>
-              {copiedUnblock ? "Copied! ✓" : "Copy Unblock Command"}
-            </button>
-          </div>
-          <p className="tiny muted">
-            Active Browser Shield: When Focus mode is running, FocusMate catches tab switching away to blocked apps, sounds an audible distraction alarm, and pauses your streak.
+
+          {blockTab === "phone" ? (
+            <div className="phone-guide-body">
+              <div className="phone-feature-badge">
+                <span className="dot-sm" style={{ background: "var(--green)" }} />
+                <span><strong>Active Phone Shield:</strong> Auto-blocks {list.slice(0, 3).join(", ") || "distractions"} without any terminal.</span>
+              </div>
+
+              <div className="phone-step-card" style={{ marginTop: "8px" }}>
+                <div className="step-title">1. Live Tab & App Guard (Automatic)</div>
+                <p className="tiny muted">
+                  If you swipe to YouTube, Instagram, or TikTok while your timer is running, FocusMate triggers an alert alarm, wilts your plant, and tracks away time.
+                </p>
+                <button
+                  type="button"
+                  className="btn small secondary"
+                  style={{ marginTop: "6px" }}
+                  onClick={() => {
+                    playDistractionBeep();
+                    setTestedSound(true);
+                    setTimeout(() => setTestedSound(false), 2500);
+                  }}
+                >
+                  {testedSound ? "🔔 Alarm Playing!" : "🔊 Test Phone Alarm Tone"}
+                </button>
+              </div>
+
+              <div className="phone-step-card" style={{ marginTop: "8px" }}>
+                <div className="step-title">2. 100% Unbreakable Phone Lock</div>
+                <p className="tiny muted">
+                  <strong>iPhone / iPad (iOS):</strong> Use <em>Guided Access</em> (Triple-click power button). It locks your phone screen inside FocusMate — you cannot open YouTube or swipe away until you finish study!
+                </p>
+                <p className="tiny muted" style={{ marginTop: "4px" }}>
+                  <strong>Android:</strong> Pull down notification shade and tap <em>Focus Mode</em> (Digital Wellbeing) to pause YouTube & social apps, or use <em>App Pinning</em>.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="desktop-guide-body">
+              <p className="small muted">
+                Want to block {list.slice(0, 3).join(", ") || "YouTube"} across all browsers and apps on your device while you study? Run this 1-line command in your Mac Terminal:
+              </p>
+              <div className="code-box">
+                <code>{macBlockCommand}</code>
+                <button className="btn small" onClick={() => copyText(macBlockCommand, true)}>
+                  {copiedBlock ? "Copied! ✓" : "Copy Block Command"}
+                </button>
+              </div>
+              <div className="code-box unblock-box" style={{ marginTop: "6px" }}>
+                <code>{macUnblockCommand}</code>
+                <button className="btn small secondary" onClick={() => copyText(macUnblockCommand, false)}>
+                  {copiedUnblock ? "Copied! ✓" : "Copy Unblock Command"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <p className="tiny muted" style={{ marginTop: "4px" }}>
+            ⚡ Live Focus Shield: Active on this device. Whenever Focus Mode is turned on, distracting apps trigger alarms and wilt your growing plant.
           </p>
         </div>
       )}

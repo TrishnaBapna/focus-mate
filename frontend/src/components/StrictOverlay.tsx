@@ -4,7 +4,7 @@ import { useSettings } from "../hooks/useSettings";
 import { formatDuration } from "../utils/time";
 
 // Plays gentle two-tone distraction alert using Web Audio API (no external mp3 needed)
-function playDistractionBeep() {
+export function playDistractionBeep() {
   try {
     const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const osc = ctx.createOscillator();
