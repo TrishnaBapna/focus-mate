@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useFolders } from "../hooks/useFolders";
 import { useSubjects } from "../hooks/useSubjects";
 import { addNote, deleteNote, updateNote } from "../services/notes";
 import { parseStrokes, serializeStrokes, type Stroke } from "../utils/drawing";
@@ -18,10 +19,12 @@ const MAX_JSON_CHARS = 900000; // Firestore documents are limited to about 1 MB
 export default function HandwrittenEditor({ note }: { note?: Note }) {
   const { user } = useAuth();
   const { subjects } = useSubjects();
+  const { folders } = useFolders();
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
   const [title, setTitle] = useState(note?.title ?? "");
+  const [folderId, setFolderId] = useState(note?.folderId ?? params.get("folder") ?? "");
   const [subjectId, setSubjectId] = useState(note?.subjectId ?? params.get("subject") ?? "");
   const [topic, setTopic] = useState(note?.topic ?? params.get("topic") ?? "");
   const [strokes, setStrokes] = useState<Stroke[]>(() => parseStrokes(note?.strokesJson));
@@ -86,6 +89,7 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
     }
 
     const subject = subjects.find((s) => s.id === subjectId);
+    const selectedFolder = folders.find((f) => f.id === folderId);
     const data = {
       type: "handwritten" as const,
       title: title.trim(),
@@ -95,6 +99,8 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
       subjectName: subject?.name ?? note?.subjectName ?? "",
       subjectEmoji: subject?.emoji ?? note?.subjectEmoji ?? "",
       topic: topic.trim(),
+      folderId: folderId || null,
+      folderName: folderId ? (selectedFolder?.name ?? note?.folderName ?? "") : "",
       sessionId: sessionId ?? null,
     };
 
@@ -132,6 +138,14 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
       />
 
       <div className="note-fields">
+        <select value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+          <option value="">📂 Unfiled</option>
+          {folders.map((f) => (
+            <option key={f.id} value={f.id}>
+              📁 {f.name}
+            </option>
+          ))}
+        </select>
         <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
           <option value="">No subject</option>
           {subjects.map((s) => (

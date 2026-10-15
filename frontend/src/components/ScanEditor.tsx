@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useFolders } from "../hooks/useFolders";
 import { useMediaUrl } from "../hooks/useMediaUrl";
 import { useSubjects } from "../hooks/useSubjects";
 import { deleteMedia, loadMedia, saveMedia } from "../services/media";
@@ -53,11 +54,13 @@ function PagePreview({ page }: { page: DraftPage }) {
 export default function ScanEditor({ note }: { note?: Note }) {
   const { user } = useAuth();
   const { subjects } = useSubjects();
+  const { folders } = useFolders();
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
   const [title, setTitle] = useState(note?.title ?? "");
   const [text, setText] = useState(note?.content ?? "");
+  const [folderId, setFolderId] = useState(note?.folderId ?? params.get("folder") ?? "");
   const [subjectId, setSubjectId] = useState(note?.subjectId ?? params.get("subject") ?? "");
   const [topic, setTopic] = useState(note?.topic ?? params.get("topic") ?? "");
   const [pages, setPages] = useState<DraftPage[]>(() => draftsFromNote(note));
@@ -272,6 +275,7 @@ export default function ScanEditor({ note }: { note?: Note }) {
       }
 
       const subject = subjects.find((s) => s.id === subjectId);
+      const selectedFolder = folders.find((f) => f.id === folderId);
       const data = {
         type: "scan" as const,
         title: title.trim() || "Scanned document",
@@ -284,6 +288,8 @@ export default function ScanEditor({ note }: { note?: Note }) {
         subjectName: subject?.name ?? note?.subjectName ?? "",
         subjectEmoji: subject?.emoji ?? note?.subjectEmoji ?? "",
         topic: topic.trim(),
+        folderId: folderId || null,
+        folderName: folderId ? (selectedFolder?.name ?? note?.folderName ?? "") : "",
         sessionId: sessionId ?? null,
       };
 
@@ -339,6 +345,14 @@ export default function ScanEditor({ note }: { note?: Note }) {
       />
 
       <div className="note-fields">
+        <select value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+          <option value="">📂 Unfiled</option>
+          {folders.map((f) => (
+            <option key={f.id} value={f.id}>
+              📁 {f.name}
+            </option>
+          ))}
+        </select>
         <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
           <option value="">No subject</option>
           {subjects.map((s) => (

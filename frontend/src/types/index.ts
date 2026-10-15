@@ -24,6 +24,14 @@ export interface FocusSession {
   completedAt?: Timestamp | null;
 }
 
+export interface NoteFolder {
+  id: string;
+  name: string;
+  color?: string;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+}
+
 export interface Note {
   id: string;
   title: string;
@@ -33,6 +41,8 @@ export interface Note {
   subjectEmoji: string;
   topic: string;
   sessionId: string | null;
+  folderId?: string | null;
+  folderName?: string;
   type?: "typed" | "handwritten" | "voice" | "scan"; // older notes have no type = typed
   strokesJson?: string; // pen strokes, for handwritten notes
   audioId?: string; // recording in the media area, for voice notes

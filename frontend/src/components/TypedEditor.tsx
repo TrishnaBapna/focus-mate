@@ -2,6 +2,7 @@ import { useState } from "react";
 import AiToolsPanel from "./AiToolsPanel";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useFolders } from "../hooks/useFolders";
 import { useSubjects } from "../hooks/useSubjects";
 import { addNote, deleteNote, updateNote } from "../services/notes";
 import type { Note } from "../types";
@@ -9,11 +10,13 @@ import type { Note } from "../types";
 export default function TypedEditor({ note }: { note?: Note }) {
   const { user } = useAuth();
   const { subjects } = useSubjects();
+  const { folders } = useFolders();
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
+  const [folderId, setFolderId] = useState(note?.folderId ?? params.get("folder") ?? "");
   const [subjectId, setSubjectId] = useState(note?.subjectId ?? params.get("subject") ?? "");
   const [topic, setTopic] = useState(note?.topic ?? params.get("topic") ?? "");
   const [saving, setSaving] = useState(false);
@@ -29,6 +32,7 @@ export default function TypedEditor({ note }: { note?: Note }) {
     }
 
     const subject = subjects.find((s) => s.id === subjectId);
+    const selectedFolder = folders.find((f) => f.id === folderId);
     const data = {
       type: "typed" as const,
       title: title.trim(),
@@ -37,6 +41,8 @@ export default function TypedEditor({ note }: { note?: Note }) {
       subjectName: subject?.name ?? note?.subjectName ?? "",
       subjectEmoji: subject?.emoji ?? note?.subjectEmoji ?? "",
       topic: topic.trim(),
+      folderId: folderId || null,
+      folderName: folderId ? (selectedFolder?.name ?? note?.folderName ?? "") : "",
       sessionId: sessionId ?? null,
     };
 
@@ -74,6 +80,14 @@ export default function TypedEditor({ note }: { note?: Note }) {
       />
 
       <div className="note-fields">
+        <select value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+          <option value="">📂 Unfiled</option>
+          {folders.map((f) => (
+            <option key={f.id} value={f.id}>
+              📁 {f.name}
+            </option>
+          ))}
+        </select>
         <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
           <option value="">No subject</option>
           {subjects.map((s) => (
