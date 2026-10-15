@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSettings } from "../hooks/useSettings";
 import Icon from "./Icon";
-import { playDistractionBeep } from "./StrictOverlay";
+import { playDistractionBeep } from "../utils/chime";
 
 // Supported distracting apps and domains
 const TILES: Record<string, { emoji: string; bg: string; domain: string }> = {

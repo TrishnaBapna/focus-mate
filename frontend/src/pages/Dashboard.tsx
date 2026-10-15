@@ -27,7 +27,11 @@ export default function Dashboard() {
     <div className="wf-home">
       <div className="wf-col">
         <div className="o-hero">
-          <HeroCard name={name} count={today.dueCount + today.plans.length} />
+          <HeroCard
+            name={name}
+            count={today.dueCount + today.plans.length}
+            streak={stats.currentStreak}
+          />
         </div>
         <div className="wf-two o-two">
           <WeeklyCard week={stats.week} />

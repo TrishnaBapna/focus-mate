@@ -18,6 +18,8 @@ type Output =
   | { kind: "quiz"; questions: QuizQuestion[]; run: number }
   | { kind: "cards"; cards: Flashcard[]; run: number };
 
+let runSeq = 0;
+
 export default function AiToolsPanel({
   text,
   onInsert,
@@ -50,10 +52,11 @@ export default function AiToolsPanel({
         json: tool.kind !== "text",
       });
 
+      const currentRun = ++runSeq;
       if (tool.kind === "quiz") {
-        setOutput({ kind: "quiz", questions: parseQuiz(answer), run: Date.now() });
+        setOutput({ kind: "quiz", questions: parseQuiz(answer), run: currentRun });
       } else if (tool.kind === "cards") {
-        setOutput({ kind: "cards", cards: parseCards(answer), run: Date.now() });
+        setOutput({ kind: "cards", cards: parseCards(answer), run: currentRun });
       } else {
         setOutput({ kind: "text", label: `${tool.icon} ${tool.label}`, text: answer });
       }

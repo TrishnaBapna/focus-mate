@@ -40,7 +40,11 @@ export default function SocialProvider({ children }: { children: ReactNode }) {
     return listenToSocial(user.uid, setLoaded);
   }, [user]);
 
-  const weekKey = useMemo(() => weekStartKey(), [hour]);
+  const weekKey = useMemo(() => {
+    const d = new Date();
+    d.setHours(hour);
+    return weekStartKey(d);
+  }, [hour]);
   const weekSeconds = useMemo(() => weekSecondsFor(sessions, weekKey), [sessions, weekKey]);
   const level = progress.level.level;
   const settings = loaded ?? null;

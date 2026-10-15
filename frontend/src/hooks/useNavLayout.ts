@@ -25,7 +25,7 @@ function measure(): NavLayoutState {
   const h = window.innerHeight;
   const size: ScreenSize = w < 768 ? "phone" : w < 1100 ? "tablet" : "desktop";
 
-  let count = 4;
+  let count: number;
   if (w >= 1200 && h >= 680) {
     count = 7;
   } else if (w >= 1000 && h >= 580) {

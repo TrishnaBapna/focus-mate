@@ -9,8 +9,8 @@ const TYPES = ["playlist", "album", "track", "episode", "show", "artist"];
 // Accepts a Spotify share link (or a spotify: code) and returns what we need to show its player.
 export function parseSpotify(input: string): SpotifyEmbed | null {
   const text = input.trim();
-  let type = "";
-  let id = "";
+  let type: string;
+  let id: string;
 
   const uri = text.match(/^spotify:(\w+):([A-Za-z0-9]+)$/);
   if (uri) {

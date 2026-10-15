@@ -149,7 +149,7 @@ export async function askAi(options: AskOptions): Promise<string> {
         options.provider === "gemini"
           ? " Try again in a minute, or switch the model in Settings (for example to gemini-flash-lite-latest)."
           : " Try again in a moment.";
-      throw new Error(err.message + tip);
+      throw new Error(err.message + tip, { cause: err });
     }
   }
 }

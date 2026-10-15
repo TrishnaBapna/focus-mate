@@ -15,7 +15,15 @@ function Skyline() {
   );
 }
 
-export default function HeroCard({ name, count }: { name: string; count: number }) {
+export default function HeroCard({
+  name,
+  count,
+  streak = 0,
+}: {
+  name: string;
+  count: number;
+  streak?: number;
+}) {
   const hour = useHour();
   const scene = sceneForHour(hour);
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -24,9 +32,20 @@ export default function HeroCard({ name, count }: { name: string; count: number 
     <section className={`wf-hero hero-${scene}`}>
       <Skyline />
       <div className="wf-hero-text">
-        <h2>
-          {greeting}, {name}!
-        </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <h2>
+            {greeting}, {name}!
+          </h2>
+          {streak > 0 ? (
+            <span className="streak-pill" title="Consecutive days studied">
+              🔥 {streak} {streak === 1 ? "day streak" : "day streak"}
+            </span>
+          ) : (
+            <span className="streak-pill" style={{ opacity: 0.9 }}>
+              🌱 Start your streak
+            </span>
+          )}
+        </div>
         <p>
           {count === 0
             ? "Nothing planned for today. Ready to start?"
