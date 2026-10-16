@@ -10,6 +10,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteMedia, extractAssociatedMediaIds } from "./media";
 import type { Note } from "../types";
 
 export type NoteInput = Omit<Note, "id" | "createdAt" | "updatedAt">;
@@ -33,6 +34,12 @@ export function updateNote(uid: string, id: string, data: NoteInput) {
 
 export function deleteNote(uid: string, id: string) {
   return deleteDoc(doc(db, "users", uid, "notes", id));
+}
+
+export async function deleteNoteWithMedia(uid: string, note: Note): Promise<void> {
+  await deleteNote(uid, note.id);
+  const mediaIds = extractAssociatedMediaIds(note);
+  await Promise.all(mediaIds.map((mid) => deleteMedia(uid, mid).catch(() => {})));
 }
 
 export function listenToNotes(uid: string, callback: (notes: Note[]) => void) {

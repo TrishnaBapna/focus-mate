@@ -6,7 +6,7 @@ import { useFolders } from "../hooks/useFolders";
 import { useRecorder } from "../hooks/useRecorder";
 import { useSubjects } from "../hooks/useSubjects";
 import { deleteMedia, saveMedia } from "../services/media";
-import { addNote, deleteNote, updateNote } from "../services/notes";
+import { addNote, deleteNoteWithMedia, updateNote } from "../services/notes";
 import { formatClock } from "../utils/time";
 import AudioPlayer from "./AudioPlayer";
 import type { Note } from "../types";
@@ -65,7 +65,9 @@ export default function VoiceEditor({ note }: { note?: Note }) {
       const oldAudioId = note?.audioId;
 
       if (recorder.result) {
-        audioId = await saveMedia(user.uid, recorder.result.blob);
+        audioId = await saveMedia(user.uid, recorder.result.blob, {
+          category: "voice",
+        });
         audioMime = recorder.result.blob.type;
         audioSeconds = recorder.result.seconds;
       }
@@ -97,8 +99,8 @@ export default function VoiceEditor({ note }: { note?: Note }) {
     } catch (err) {
       console.error("Failed to save voice note", err);
       setError(
-        err instanceof Error && err.message === "too-big"
-          ? "That recording is too large to save. Try a shorter one."
+        err instanceof Error && (err.message === "too-big" || err.message === "audio-too-large")
+          ? "That recording is too large to save (max 25 MB). Try a shorter one."
           : "Couldn't save the note. Please try again."
       );
       setSaving(false);
@@ -108,8 +110,7 @@ export default function VoiceEditor({ note }: { note?: Note }) {
   async function handleDelete() {
     if (!user || !note) return;
     if (!window.confirm("Delete this note and its recording?")) return;
-    await deleteNote(user.uid, note.id);
-    if (note.audioId) void deleteMedia(user.uid, note.audioId);
+    await deleteNoteWithMedia(user.uid, note);
     navigate("/notes");
   }
 

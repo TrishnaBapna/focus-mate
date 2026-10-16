@@ -1,30 +1,41 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
-import { loadMedia } from "../services/media";
+import { getMediaUrl } from "../services/media";
 
-// Loads a saved file from the media area and gives back a playable/showable URL.
+// Loads a saved file from Firebase Storage or legacy media area and gives back a playable/showable URL.
 export function useMediaUrl(mediaId: string | undefined) {
   const { user } = useAuth();
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState<{ id?: string; url: string | null; failed: boolean }>({
+    id: undefined,
+    url: null,
+    failed: false,
+  });
+
+  const loading = !!(user && mediaId && loaded.id !== mediaId);
+  const url = loaded.id === mediaId ? loaded.url : null;
+  const failed = loaded.id === mediaId ? loaded.failed : false;
 
   useEffect(() => {
     if (!user || !mediaId) return;
     let cancelled = false;
     let objectUrl: string | null = null;
 
-    loadMedia(user.uid, mediaId)
-      .then((blob) => {
+    getMediaUrl(user.uid, mediaId)
+      .then((resUrl) => {
         if (cancelled) return;
-        if (!blob) {
-          setFailed(true);
+        if (!resUrl) {
+          setLoaded({ id: mediaId, url: null, failed: true });
           return;
         }
-        objectUrl = URL.createObjectURL(blob);
-        setUrl(objectUrl);
+        if (resUrl.startsWith("blob:")) {
+          objectUrl = resUrl;
+        }
+        setLoaded({ id: mediaId, url: resUrl, failed: false });
       })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn("useMediaUrl error:", err);
+        setLoaded({ id: mediaId, url: null, failed: true });
       });
 
     return () => {
@@ -33,5 +44,5 @@ export function useMediaUrl(mediaId: string | undefined) {
     };
   }, [user, mediaId]);
 
-  return { url, failed };
+  return { url, loading, failed };
 }

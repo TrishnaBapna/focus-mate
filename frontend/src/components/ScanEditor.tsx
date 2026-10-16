@@ -5,7 +5,7 @@ import { useFolders } from "../hooks/useFolders";
 import { useMediaUrl } from "../hooks/useMediaUrl";
 import { useSubjects } from "../hooks/useSubjects";
 import { deleteMedia, loadMedia, saveMedia } from "../services/media";
-import { addNote, deleteNote, updateNote } from "../services/notes";
+import { addNote, deleteNoteWithMedia, updateNote } from "../services/notes";
 import { newId } from "../utils/exams";
 import { OCR_LANGUAGES, recognizePages } from "../utils/ocr";
 import { preparePhoto, rotatePage } from "../utils/pages";
@@ -268,8 +268,11 @@ export default function ScanEditor({ note }: { note?: Note }) {
           continue;
         }
         if (!p.blob) continue;
-        setStatus(`Saving page ${i + 1} of ${pages.length}…`);
-        const id = await saveMedia(user.uid, p.blob);
+        setStatus(`Uploading page ${i + 1} of ${pages.length}…`);
+        const id = await saveMedia(user.uid, p.blob, {
+          category: "scans",
+          onProgress: (pct) => setStatus(`Uploading page ${i + 1} of ${pages.length} (${pct}%)…`),
+        });
         savedNow.push(id);
         out.push({ imageId: id, thumb: p.thumb ?? "" });
       }
@@ -312,8 +315,8 @@ export default function ScanEditor({ note }: { note?: Note }) {
       console.error("Failed to save scanned document", err);
       savedNow.forEach((id) => void deleteMedia(user.uid, id)); // clean up a half-finished save
       setError(
-        err instanceof Error && err.message === "too-big"
-          ? "One of the pages is too large to save. Try removing it."
+        err instanceof Error && (err.message === "too-big" || err.message === "image-too-large")
+          ? "One of the pages is too large to save (max 10 MB per image). Try removing it."
           : "Couldn't save the document. Please try again."
       );
       setSaving(false);
@@ -324,10 +327,7 @@ export default function ScanEditor({ note }: { note?: Note }) {
   async function handleDelete() {
     if (!user || !note) return;
     if (!window.confirm("Delete this note and all of its pages?")) return;
-    await deleteNote(user.uid, note.id);
-    const ids =
-      note.pages && note.pages.length > 0 ? note.pages.map((p) => p.imageId) : note.imageId ? [note.imageId] : [];
-    ids.forEach((id) => void deleteMedia(user.uid, id));
+    await deleteNoteWithMedia(user.uid, note);
     navigate("/notes");
   }
 

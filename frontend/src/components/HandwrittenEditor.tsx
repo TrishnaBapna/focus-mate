@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useFolders } from "../hooks/useFolders";
 import { useSubjects } from "../hooks/useSubjects";
-import { addNote, deleteNote, updateNote } from "../services/notes";
-import { parseStrokes, serializeStrokes, type Stroke } from "../utils/drawing";
+import { addNote, deleteNoteWithMedia, updateNote } from "../services/notes";
+import { deleteMedia, loadMedia, saveMedia } from "../services/media";
+import { parseStrokes, renderStrokesToBlob, serializeStrokes, type Stroke } from "../utils/drawing";
 import DrawingCanvas, { type Tool } from "./DrawingCanvas";
 import type { Note } from "../types";
 
@@ -14,7 +15,6 @@ const WIDTHS = [
   { label: "Medium", value: 4 },
   { label: "Thick", value: 9 },
 ];
-const MAX_JSON_CHARS = 900000; // Firestore documents are limited to about 1 MB
 
 export default function HandwrittenEditor({ note }: { note?: Note }) {
   const { user } = useAuth();
@@ -76,6 +76,17 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  useEffect(() => {
+    if (!note?.strokesJson && note?.strokesMediaId && user) {
+      void loadMedia(user.uid, note.strokesMediaId).then((blob) => {
+        if (!blob) return;
+        void blob.text().then((txt) => {
+          setStrokes(parseStrokes(txt));
+        });
+      });
+    }
+  }, [note, user]);
+
   async function handleSave() {
     if (!user) return;
     if (!title.trim() && strokes.length === 0) {
@@ -83,32 +94,55 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
       return;
     }
     const json = serializeStrokes(strokes);
-    if (json.length > MAX_JSON_CHARS) {
-      setError("This page is too full to save. Clear some of it, or start a new note.");
-      return;
-    }
-
-    const subject = subjects.find((s) => s.id === subjectId);
-    const selectedFolder = folders.find((f) => f.id === folderId);
-    const data = {
-      type: "handwritten" as const,
-      title: title.trim(),
-      content: "",
-      strokesJson: json,
-      subjectId,
-      subjectName: subject?.name ?? note?.subjectName ?? "",
-      subjectEmoji: subject?.emoji ?? note?.subjectEmoji ?? "",
-      topic: topic.trim(),
-      folderId: folderId || null,
-      folderName: folderId ? (selectedFolder?.name ?? note?.folderName ?? "") : "",
-      sessionId: sessionId ?? null,
-    };
 
     setSaving(true);
     setError("");
+
     try {
+      let imageId = note?.imageId;
+      const oldImageId = note?.imageId;
+      let strokesMediaId = note?.strokesMediaId;
+      const oldStrokesMediaId = note?.strokesMediaId;
+
+      // Render handwriting preview image and upload to Storage
+      if (strokes.length > 0) {
+        const imgBlob = await renderStrokesToBlob(strokes);
+        if (imgBlob) {
+          imageId = await saveMedia(user.uid, imgBlob, { category: "handwriting" });
+        }
+      }
+
+      // If strokes are large (> 50KB JSON), store full strokes in Storage to avoid Firestore 1MB limits
+      if (json.length > 50000) {
+        const strokesBlob = new Blob([json], { type: "application/json" });
+        strokesMediaId = await saveMedia(user.uid, strokesBlob, { category: "handwriting" });
+      }
+
+      const subject = subjects.find((s) => s.id === subjectId);
+      const selectedFolder = folders.find((f) => f.id === folderId);
+      const data = {
+        type: "handwritten" as const,
+        title: title.trim(),
+        content: "",
+        strokesJson: json.length <= 50000 ? json : "",
+        strokesMediaId,
+        imageId,
+        subjectId,
+        subjectName: subject?.name ?? note?.subjectName ?? "",
+        subjectEmoji: subject?.emoji ?? note?.subjectEmoji ?? "",
+        topic: topic.trim(),
+        folderId: folderId || null,
+        folderName: folderId ? (selectedFolder?.name ?? note?.folderName ?? "") : "",
+        sessionId: sessionId ?? null,
+      };
+
       if (note) await updateNote(user.uid, note.id, data);
       else await addNote(user.uid, data);
+
+      // Clean up old replaced media
+      if (oldImageId && oldImageId !== imageId) void deleteMedia(user.uid, oldImageId);
+      if (oldStrokesMediaId && oldStrokesMediaId !== strokesMediaId) void deleteMedia(user.uid, oldStrokesMediaId);
+
       navigate("/notes");
     } catch (err) {
       console.error("Failed to save note", err);
@@ -120,7 +154,7 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
   async function handleDelete() {
     if (!user || !note) return;
     if (!window.confirm("Delete this note?")) return;
-    await deleteNote(user.uid, note.id);
+    await deleteNoteWithMedia(user.uid, note);
     navigate("/notes");
   }
 

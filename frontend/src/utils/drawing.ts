@@ -80,3 +80,23 @@ export function parseStrokes(json: string | undefined): Stroke[] {
 export function serializeStrokes(strokes: Stroke[]): string {
   return JSON.stringify(strokes);
 }
+
+export async function renderStrokesToBlob(
+  strokes: Stroke[],
+  mimeType: "image/png" | "image/jpeg" = "image/png"
+): Promise<Blob | null> {
+  if (typeof document === "undefined" || strokes.length === 0) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = PAGE_W;
+  canvas.height = PAGE_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+  drawAll(ctx, strokes);
+
+  return new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, mimeType);
+  });
+}

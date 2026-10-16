@@ -54,6 +54,7 @@ export interface Note {
   folderName?: string;
   type?: "typed" | "handwritten" | "voice" | "scan"; // older notes have no type = typed
   strokesJson?: string; // pen strokes, for handwritten notes
+  strokesMediaId?: string; // pen strokes payload stored in Storage for large drawings
   audioId?: string; // recording in the media area, for voice notes
   audioMime?: string;
   audioSeconds?: number;

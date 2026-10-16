@@ -1,9 +1,16 @@
 import { Link } from "react-router-dom";
+import { useMediaUrl } from "../hooks/useMediaUrl";
 import { formatClock } from "../utils/time";
 import HandwritingThumb from "./HandwritingThumb";
 import type { Note } from "../types";
 
 const ICONS = { typed: "", handwritten: "✍️ ", voice: "🎙️ ", scan: "📷 " } as const;
+
+function HandwrittenThumbImage({ imageId }: { imageId: string }) {
+  const { url } = useMediaUrl(imageId);
+  if (!url) return <div className="note-thumb-placeholder">✍️</div>;
+  return <img className="note-thumb-img" src={url} alt="Handwritten note preview" />;
+}
 
 export default function NoteCard({
   note: n,
@@ -39,7 +46,13 @@ export default function NoteCard({
         )}
       </div>
 
-      {kind === "handwritten" && <HandwritingThumb strokesJson={n.strokesJson} />}
+      {kind === "handwritten" && (
+        n.strokesJson ? (
+          <HandwritingThumb strokesJson={n.strokesJson} />
+        ) : n.imageId ? (
+          <HandwrittenThumbImage imageId={n.imageId} />
+        ) : null
+      )}
       {kind === "scan" && n.thumb && <img className="note-thumb-img" src={n.thumb} alt="" />}
 
       {kind !== "handwritten" && (
