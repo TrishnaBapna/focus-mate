@@ -90,7 +90,17 @@ export default function DeckPage() {
     );
   }
 
-  if (reviewing) return <StudySession cards={due} onDone={() => setReviewing(false)} />;
+  if (reviewing) {
+    return (
+      <StudySession
+        cards={due}
+        deckName={deck.name}
+        subjectId={deck.subjectId}
+        subjectName={deck.subjectName}
+        onDone={() => setReviewing(false)}
+      />
+    );
+  }
 
   async function handleAddOne(e: FormEvent) {
     e.preventDefault();

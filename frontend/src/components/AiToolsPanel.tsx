@@ -23,9 +23,15 @@ let runSeq = 0;
 export default function AiToolsPanel({
   text,
   onInsert,
+  subjectId,
+  subjectName,
+  topic,
 }: {
   text: string;
   onInsert: (text: string) => void;
+  subjectId?: string;
+  subjectName?: string;
+  topic?: string;
 }) {
   const { provider, apiKey, model } = useAiSettings();
   const [busy, setBusy] = useState<string | null>(null);
@@ -117,7 +123,13 @@ export default function AiToolsPanel({
               {output.kind === "quiz" && (
                 <>
                   <strong>❓ Quiz</strong>
-                  <AiQuiz key={output.run} questions={output.questions} />
+                  <AiQuiz
+                    key={output.run}
+                    questions={output.questions}
+                    subjectId={subjectId}
+                    subjectName={subjectName}
+                    topic={topic}
+                  />
                 </>
               )}
               {output.kind === "cards" && (

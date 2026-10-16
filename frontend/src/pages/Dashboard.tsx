@@ -6,6 +6,7 @@ import PerformanceCard from "../components/PerformanceCard";
 import PomodoroCard from "../components/PomodoroCard";
 import QuickAddTask from "../components/QuickAddTask";
 import TodayTasksCard from "../components/TodayTasksCard";
+import WeakTopicsCard from "../components/WeakTopicsCard";
 import WeeklyCard from "../components/WeeklyCard";
 import { useAchievements } from "../hooks/useAchievements";
 import { useAuth } from "../hooks/useAuth";
@@ -40,6 +41,9 @@ export default function Dashboard() {
         </div>
         <div className="o-goals">
           <DashboardGoalsCard />
+        </div>
+        <div className="o-topics">
+          <WeakTopicsCard />
         </div>
         <div className="o-block">
           <BlockListCard />

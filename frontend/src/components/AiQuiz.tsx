@@ -1,11 +1,43 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { addAssessment } from "../services/assessments";
 import type { QuizQuestion } from "../types/ai";
 
-export default function AiQuiz({ questions }: { questions: QuizQuestion[] }) {
+export default function AiQuiz({
+  questions,
+  subjectId,
+  subjectName,
+  topic,
+}: {
+  questions: QuizQuestion[];
+  subjectId?: string;
+  subjectName?: string;
+  topic?: string;
+}) {
+  const { user } = useAuth();
   const [answers, setAnswers] = useState<(number | null)[]>(() => questions.map(() => null));
+  const [recorded, setRecorded] = useState(false);
+  const recordedRef = useRef(false);
 
   const answered = answers.filter((a) => a !== null).length;
   const score = answers.filter((a, i) => a === questions[i].answerIndex).length;
+
+  useEffect(() => {
+    if (answered === questions.length && user && !recordedRef.current && questions.length > 0) {
+      recordedRef.current = true;
+      const targetTopic = (topic || subjectName || "General Quiz").trim();
+      addAssessment(user.uid, {
+        subjectId: subjectId || "",
+        subjectName: subjectName || "General",
+        topic: targetTopic,
+        score,
+        totalQuestions: questions.length,
+        source: "quiz",
+      })
+        .then(() => setRecorded(true))
+        .catch((err) => console.warn("Could not record quiz assessment:", err));
+    }
+  }, [answered, questions.length, user, topic, subjectId, subjectName, score]);
 
   return (
     <div className="ai-quiz">
@@ -51,9 +83,17 @@ export default function AiQuiz({ questions }: { questions: QuizQuestion[] }) {
       })}
 
       {answered === questions.length && (
-        <p className="quiz-score">
-          Score: {score} / {questions.length} {score === questions.length ? "🎉" : ""}
-        </p>
+        <div className="quiz-score-wrap">
+          <p className="quiz-score">
+            Score: {score} / {questions.length} ({Math.round((score / questions.length) * 100)}%){" "}
+            {score === questions.length ? "🎉" : ""}
+          </p>
+          {recorded && (
+            <span className="quiz-recorded-badge">
+              ⚡ Recorded to Topic Analysis
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

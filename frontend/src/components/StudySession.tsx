@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { addAssessment } from "../services/assessments";
 import { recordReview } from "../services/study";
 import { nextReview, shuffle } from "../utils/study";
 import type { StudyCard } from "../types/study";
@@ -7,9 +8,15 @@ import type { StudyCard } from "../types/study";
 export default function StudySession({
   cards,
   onDone,
+  deckName,
+  subjectId,
+  subjectName,
 }: {
   cards: StudyCard[];
   onDone: () => void;
+  deckName?: string;
+  subjectId?: string;
+  subjectName?: string;
 }) {
   const { user } = useAuth();
   const [queue, setQueue] = useState<StudyCard[]>(() => shuffle(cards));
@@ -17,6 +24,8 @@ export default function StudySession({
   const [flipped, setFlipped] = useState(false);
   const [reviewed, setReviewed] = useState(0);
   const [remembered, setRemembered] = useState(0);
+  const [recorded, setRecorded] = useState(false);
+  const recordedRef = useRef(false);
 
   const current = queue[0];
 
@@ -53,14 +62,38 @@ export default function StudySession({
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  // Record completed review session to assessments for Topic Analysis
+  useEffect(() => {
+    if (!current && reviewed > 0 && user && !recordedRef.current) {
+      recordedRef.current = true;
+      const targetTopic = (deckName || subjectName || "Flashcards").trim();
+      addAssessment(user.uid, {
+        subjectId: subjectId || "",
+        subjectName: subjectName || "General",
+        topic: targetTopic,
+        score: remembered,
+        totalQuestions: reviewed,
+        source: "flashcards",
+      })
+        .then(() => setRecorded(true))
+        .catch((err) => console.warn("Could not save flashcard assessment:", err));
+    }
+  }, [current, reviewed, remembered, user, deckName, subjectId, subjectName]);
+
   if (!current) {
+    const accuracy = reviewed > 0 ? Math.round((remembered / reviewed) * 100) : 0;
     return (
       <div className="card focus-running">
         <h2>🎉 Session done!</h2>
         <p>
-          You went through {reviewed} answer{reviewed === 1 ? "" : "s"} and remembered {remembered}.
+          You went through {reviewed} answer{reviewed === 1 ? "" : "s"} and remembered {remembered} ({accuracy}% accuracy).
           Cards you remembered will come back later, so you won't see them again for a while.
         </p>
+        {recorded && (
+          <p className="quiz-recorded-badge" style={{ marginBottom: "1rem" }}>
+            ⚡ Recorded to Weak Topic Analysis
+          </p>
+        )}
         <button className="btn" onClick={onDone}>
           Back to decks
         </button>
@@ -101,7 +134,7 @@ export default function StudySession({
       ) : (
         <div className="focus-controls">
           <button className="btn" onClick={() => setFlipped(true)}>
-            Show answer
+            Show answer (Space)
           </button>
         </div>
       )}

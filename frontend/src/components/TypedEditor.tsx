@@ -116,6 +116,9 @@ export default function TypedEditor({ note }: { note?: Note }) {
       <AiToolsPanel
         text={content}
         onInsert={(t) => setContent((c) => (c ? c + "\n\n" : "") + t)}
+        subjectId={subjectId}
+        subjectName={subjects.find((s) => s.id === subjectId)?.name ?? ""}
+        topic={topic || title}
       />
 
       {error && <p className="auth-error">{error}</p>}

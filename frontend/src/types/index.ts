@@ -98,3 +98,5 @@ export interface Plan {
   createdAt?: Timestamp | null;
 }
 
+export * from "./assessment";
+
