@@ -5,6 +5,15 @@ export interface Subject {
   name: string;
   emoji: string;
   color: string;
+  weeklyTargetHours?: number | null;
+}
+
+export interface SubjectGoal {
+  id: string;
+  subjectId: string;
+  targetHours: number;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
 }
 
 export type SessionMode = "timer" | "stopwatch" | "pomodoro";

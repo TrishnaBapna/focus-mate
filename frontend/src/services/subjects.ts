@@ -17,8 +17,16 @@ export function addSubject(uid: string, data: Omit<Subject, "id">) {
   return addDoc(subjectsRef(uid), { ...data, createdAt: serverTimestamp() });
 }
 
-export function deleteSubject(uid: string, id: string) {
-  return deleteDoc(doc(db, "users", uid, "subjects", id));
+export async function deleteSubject(uid: string, id: string) {
+  // Delete subject document
+  await deleteDoc(doc(db, "users", uid, "subjects", id));
+
+  // Clean up any associated study goal
+  try {
+    await deleteDoc(doc(db, "users", uid, "subjectGoals", id));
+  } catch (err) {
+    console.warn("Failed to delete associated subject goal:", err);
+  }
 }
 
 export function listenToSubjects(

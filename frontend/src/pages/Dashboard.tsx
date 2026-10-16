@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import BlockListCard from "../components/BlockListCard";
+import DashboardGoalsCard from "../components/DashboardGoalsCard";
 import HeroCard from "../components/HeroCard";
 import PerformanceCard from "../components/PerformanceCard";
 import PomodoroCard from "../components/PomodoroCard";
@@ -36,6 +37,9 @@ export default function Dashboard() {
         <div className="wf-two o-two">
           <WeeklyCard week={stats.week} />
           <PerformanceCard percent={percent} />
+        </div>
+        <div className="o-goals">
+          <DashboardGoalsCard />
         </div>
         <div className="o-block">
           <BlockListCard />
