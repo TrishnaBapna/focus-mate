@@ -317,8 +317,11 @@ export default function ScanEditor({ note }: { note?: Note }) {
       setError(
         err instanceof Error && (err.message === "too-big" || err.message === "image-too-large")
           ? "One of the pages is too large to save (max 10 MB per image). Try removing it."
-          : "Couldn't save the document. Please try again."
+          : err instanceof Error && err.message === "storage-unreachable"
+            ? "Cloud Storage is not enabled or provisioned in Firebase Console for large files. Please enable Firebase Storage."
+            : "Couldn't save the document. Please try again."
       );
+    } finally {
       setSaving(false);
       setStatus("");
     }

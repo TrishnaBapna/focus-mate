@@ -30,9 +30,66 @@ export interface SaveMediaOptions {
 
 const mediaRef = (uid: string) => collection(db, "users", uid, "media");
 
+// Module-level cache for Storage availability to prevent repeated 3.5s timeouts on multiple pages
+let storageAvailable: boolean | null = null;
+let lastStorageCheck = 0;
+const STORAGE_RETRY_INTERVAL = 60 * 1000; // retry Storage after 1 minute
+
 /**
- * Uploads media to user-scoped Firebase Storage and stores metadata in Firestore.
- * Avoids large binary payloads in Firestore while maintaining ID compatibility.
+ * Compresses an image blob in browser environment to fit under maxBytes (e.g. 800 KB for Firestore).
+ */
+async function compressImageForFallback(blob: Blob, maxBytes = 800000): Promise<Blob> {
+  if (typeof document === "undefined" || blob.size <= maxBytes) return blob;
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = async () => {
+      URL.revokeObjectURL(url);
+      let scale = 0.85;
+      let quality = 0.75;
+      const canvas = document.createElement("canvas");
+      let currentBlob: Blob = blob;
+
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) break;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const candidate = await new Promise<Blob | null>((res) =>
+          canvas.toBlob(res, "image/jpeg", quality)
+        );
+        if (candidate) {
+          currentBlob = candidate;
+          if (candidate.size <= maxBytes) {
+            resolve(candidate);
+            return;
+          }
+        }
+        scale *= 0.8;
+        quality = Math.max(0.4, quality - 0.1);
+      }
+      resolve(currentBlob);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(blob);
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Resilient dual-tier media saver:
+ * 1. Attempts Firebase Storage with a strict 3.5s timeout.
+ * 2. If Storage is unavailable (e.g. bucket 404, unprovisioned, CORS blocked, or timeout),
+ *    automatically and seamlessly falls back to Firestore document storage (data: Bytes).
+ * 3. Never leaves the save operation hanging indefinitely.
  */
 export async function saveMedia(
   uid: string,
@@ -50,67 +107,110 @@ export async function saveMedia(
   const id = opts.customId || doc(mediaRef(uid)).id;
   const category = opts.category || "media";
   const storagePath = `users/${uid}/${category}/${id}`;
-  const storageRef = ref(storage, storagePath);
 
-  // 1. Upload to Firebase Storage with resumable task and progress tracking
-  let downloadUrl = "";
-  try {
-    const uploadTask = uploadBytesResumable(storageRef, blob, {
-      contentType: blob.type || "application/octet-stream",
-    });
-
-    if (opts.signal) {
-      opts.signal.addEventListener("abort", () => {
-        uploadTask.cancel();
-      });
-    }
-
-    await new Promise<void>((resolve, reject) => {
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          if (snapshot.totalBytes > 0 && opts.onProgress) {
-            const pct = Math.round(
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-            );
-            opts.onProgress(pct);
-          }
-        },
-        (err) => reject(err),
-        async () => {
-          try {
-            downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        }
-      );
-    });
-  } catch (err) {
-    console.error("Storage upload failed:", err);
-    throw err;
-  }
-
-  // 2. Save reference metadata document in Firestore (no large binary payload)
-  try {
+  async function saveToFirestore(dataBlob: Blob): Promise<string> {
+    const arrayBuffer = await dataBlob.arrayBuffer();
+    const bytes = Bytes.fromUint8Array(new Uint8Array(arrayBuffer));
     await setDoc(doc(db, "users", uid, "media", id), {
-      mime: blob.type || "application/octet-stream",
-      size: blob.size,
-      storage: true,
-      storagePath,
-      downloadUrl,
+      mime: dataBlob.type || "application/octet-stream",
+      size: dataBlob.size,
+      storage: false,
+      data: bytes,
       category,
       createdAt: serverTimestamp(),
     });
-  } catch (err) {
-    console.error("Failed to save media metadata to Firestore, cleaning up Storage:", err);
-    // Clean up uploaded Storage file to prevent orphaned objects
-    await deleteObject(storageRef).catch(() => {});
-    throw err;
+    return id;
   }
 
-  return id;
+  // Determine whether to attempt Firebase Storage
+  const now = Date.now();
+  const shouldTryStorage =
+    storageAvailable !== false || (now - lastStorageCheck > STORAGE_RETRY_INTERVAL);
+
+  if (shouldTryStorage) {
+    try {
+      const storageRef = ref(storage, storagePath);
+      let downloadUrl = "";
+
+      const uploadPromise = new Promise<void>((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(storageRef, blob, {
+          contentType: blob.type || "application/octet-stream",
+        });
+
+        if (opts.signal) {
+          opts.signal.addEventListener("abort", () => {
+            uploadTask.cancel();
+            reject(new Error("aborted"));
+          });
+        }
+
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            if (snapshot.totalBytes > 0 && opts.onProgress) {
+              const pct = Math.round(
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              );
+              opts.onProgress(pct);
+            }
+          },
+          (err) => reject(err),
+          async () => {
+            try {
+              downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }
+        );
+      });
+
+      // Strict race timeout (3.5s) to prevent infinite hangs on unprovisioned/404 buckets
+      await Promise.race([
+        uploadPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("storage-timeout")), 3500)
+        ),
+      ]);
+
+      // Storage succeeded! Save metadata to Firestore
+      await setDoc(doc(db, "users", uid, "media", id), {
+        mime: blob.type || "application/octet-stream",
+        size: blob.size,
+        storage: true,
+        storagePath,
+        downloadUrl,
+        category,
+        createdAt: serverTimestamp(),
+      });
+
+      storageAvailable = true;
+      return id;
+    } catch (err) {
+      console.warn("Firebase Storage unavailable or timed out; falling back to Firestore:", err);
+      storageAvailable = false;
+      lastStorageCheck = Date.now();
+    }
+  }
+
+  // Tier 2: Resilient Firestore Fallback
+  if (blob.size <= 850000) {
+    return await saveToFirestore(blob);
+  }
+
+  // If image is larger than 850 KB, compress it to fit under Firestore document limits
+  if (blob.type.startsWith("image/")) {
+    try {
+      const compressed = await compressImageForFallback(blob, 800000);
+      return await saveToFirestore(compressed);
+    } catch (compressErr) {
+      console.warn("Failed to compress image for fallback:", compressErr);
+    }
+  }
+
+  // If payload cannot fit in Firestore and Cloud Storage is unreachable
+  throw new Error("storage-unreachable");
 }
 
 /**
@@ -123,17 +223,25 @@ export async function loadMedia(uid: string, id: string): Promise<Blob | null> {
     if (!snap.exists()) return null;
     const data = snap.data();
 
-    // New format: stored in Firebase Storage
-    if (data.storage === true || data.storagePath) {
-      const storagePath = (data.storagePath as string) || `users/${uid}/media/${id}`;
-      const storageRef = ref(storage, storagePath);
-      return await getBlob(storageRef);
-    }
-
-    // Legacy format: stored directly in Firestore as Bytes
+    // 1. Direct Firestore Bytes (either fallback or legacy)
     if (data.data) {
       const bytes = (data.data as Bytes).toUint8Array();
       return new Blob([new Uint8Array(bytes)], { type: (data.mime as string) || "application/octet-stream" });
+    }
+
+    // 2. New format: stored in Firebase Storage
+    if (data.storage === true || data.storagePath) {
+      if (data.downloadUrl) {
+        try {
+          const res = await fetch(data.downloadUrl as string);
+          if (res.ok) return await res.blob();
+        } catch {
+          // Fall through to storageRef
+        }
+      }
+      const storagePath = (data.storagePath as string) || `users/${uid}/media/${id}`;
+      const storageRef = ref(storage, storagePath);
+      return await getBlob(storageRef);
     }
 
     return null;
@@ -158,17 +266,17 @@ export async function getMediaUrl(uid: string, id: string): Promise<string | nul
       return data.downloadUrl as string;
     }
 
-    if (data.storage === true || data.storagePath) {
-      const storagePath = (data.storagePath as string) || `users/${uid}/media/${id}`;
-      const storageRef = ref(storage, storagePath);
-      return await getDownloadURL(storageRef);
-    }
-
-    // Legacy document: decode bytes and create object URL
+    // Direct Firestore Bytes (either fallback or legacy)
     if (data.data) {
       const bytes = (data.data as Bytes).toUint8Array();
       const blob = new Blob([new Uint8Array(bytes)], { type: (data.mime as string) || "application/octet-stream" });
       return URL.createObjectURL(blob);
+    }
+
+    if (data.storage === true || data.storagePath) {
+      const storagePath = (data.storagePath as string) || `users/${uid}/media/${id}`;
+      const storageRef = ref(storage, storagePath);
+      return await getDownloadURL(storageRef);
     }
 
     return null;

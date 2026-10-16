@@ -101,8 +101,11 @@ export default function VoiceEditor({ note }: { note?: Note }) {
       setError(
         err instanceof Error && (err.message === "too-big" || err.message === "audio-too-large")
           ? "That recording is too large to save (max 25 MB). Try a shorter one."
-          : "Couldn't save the note. Please try again."
+          : err instanceof Error && err.message === "storage-unreachable"
+            ? "Cloud Storage is not enabled in Firebase Console for audio recordings over 1 MB. Please enable Firebase Storage."
+            : "Couldn't save the note. Please try again."
       );
+    } finally {
       setSaving(false);
     }
   }

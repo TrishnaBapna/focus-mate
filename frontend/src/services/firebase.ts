@@ -19,4 +19,7 @@ export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 });
 export const storage = getStorage(app);
+// Limit retry timeouts to 4s to prevent operations from hanging indefinitely if bucket is unreachable
+storage.maxUploadRetryTime = 4000;
+storage.maxOperationRetryTime = 4000;
 

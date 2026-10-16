@@ -147,6 +147,7 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
     } catch (err) {
       console.error("Failed to save note", err);
       setError("Couldn't save the note. Please try again.");
+    } finally {
       setSaving(false);
     }
   }

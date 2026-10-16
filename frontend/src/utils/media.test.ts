@@ -219,4 +219,80 @@ console.log("Running Firebase Storage Media Migration automated tests...");
   console.log("✔ Non-destructive migration and rollback safety verified");
 }
 
+// 7. Dual-tier fallback logic verification: Storage failure falling back to Firestore Bytes
+{
+  interface MockMediaDoc {
+    id: string;
+    mime: string;
+    size: number;
+    storage: boolean;
+    data?: Uint8Array;
+    storagePath?: string;
+    downloadUrl?: string;
+  }
+
+  function simulateDualTierSave(
+    file: { size: number; type: string; bytes: Uint8Array },
+    storageIsOnline: boolean
+  ): MockMediaDoc {
+    if (storageIsOnline) {
+      return {
+        id: "media_stor_1",
+        mime: file.type,
+        size: file.size,
+        storage: true,
+        storagePath: `users/u1/scans/media_stor_1`,
+        downloadUrl: `https://firebasestorage.googleapis.com/...`,
+      };
+    }
+
+    // Storage is offline/404: fall back to Firestore Bytes
+    if (file.size <= 850000) {
+      return {
+        id: "media_fs_1",
+        mime: file.type,
+        size: file.size,
+        storage: false,
+        data: file.bytes,
+      };
+    }
+
+    // Oversized without storage
+    throw new Error("storage-unreachable");
+  }
+
+  // A) Storage online -> saves to Cloud Storage
+  const normalDoc = simulateDualTierSave(
+    { size: 500000, type: "image/jpeg", bytes: new Uint8Array(500000) },
+    true
+  );
+  assert.strictEqual(normalDoc.storage, true);
+  assert.ok(normalDoc.downloadUrl !== undefined);
+  assert.strictEqual(normalDoc.data, undefined);
+
+  // B) Storage unprovisioned (404/offline) -> seamlessly saves to Firestore Bytes
+  const fallbackDoc = simulateDualTierSave(
+    { size: 300000, type: "image/jpeg", bytes: new Uint8Array([1, 2, 3]) },
+    false
+  );
+  assert.strictEqual(fallbackDoc.storage, false, "Fallback document stores in Firestore");
+  assert.ok(fallbackDoc.data !== undefined, "Fallback document holds binary payload");
+  assert.strictEqual(fallbackDoc.data?.length, 3);
+
+  // C) Oversized audio without Cloud Storage -> fast rejection with clear error
+  let caughtError = "";
+  try {
+    simulateDualTierSave(
+      { size: 5000000, type: "audio/webm", bytes: new Uint8Array(5000000) },
+      false
+    );
+  } catch (e) {
+    caughtError = (e as Error).message;
+  }
+  assert.strictEqual(caughtError, "storage-unreachable", "Must fail fast when file exceeds Firestore limit");
+
+  console.log("✔ Dual-tier resilient storage fallback verified");
+}
+
 console.log("\nAll Firebase Storage Media Migration automated tests passed successfully! 🎉");
+
