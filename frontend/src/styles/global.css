@@ -1851,6 +1851,37 @@ a { color: var(--accent); }
   gap: 12px;
 }
 
+.recovery-banner {
+  max-width: 520px;
+  margin: 0 auto 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.recovery-banner button {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  line-height: 1;
+}
+.recovery-banner button:hover {
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .focus-setup .strict-toggle {
   flex-direction: row;
   align-items: flex-start;

@@ -13,6 +13,24 @@ const MODES: { id: SessionMode; label: string }[] = [
   { id: "stopwatch", label: "Stopwatch" },
 ];
 
+function RecoveryBanner({
+  notice,
+  onDismiss,
+}: {
+  notice: string | null;
+  onDismiss: () => void;
+}) {
+  if (!notice) return null;
+  return (
+    <div className="recovery-banner" role="status" aria-live="polite">
+      <span>{notice}</span>
+      <button type="button" onClick={onDismiss} aria-label="Dismiss recovery notice">
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export default function Focus() {
   const f = useFocus();
   const { subjects } = useSubjects();
@@ -29,7 +47,9 @@ export default function Focus() {
     const cheer = CHEERS[Math.floor(f.elapsedSeconds / 60) % CHEERS.length];
 
     return (
-      <div className={`card focus-running ${strictRun ? "strict" : ""}`}>
+      <>
+        <RecoveryBanner notice={f.recoveredNotice} onDismiss={f.dismissRecoveredNotice} />
+        <div className={`card focus-running ${strictRun ? "strict" : ""}`}>
         {strictRun && <p className="strict-banner">🔒 STRICT FOCUS</p>}
 
         <div className="grow">{plant}</div>
@@ -82,6 +102,7 @@ export default function Focus() {
           </div>
         )}
       </div>
+    </>
     );
   }
 
@@ -99,7 +120,9 @@ export default function Focus() {
       : "";
 
     return (
-      <div className="card focus-running">
+      <>
+        <RecoveryBanner notice={f.recoveredNotice} onDismiss={f.dismissRecoveredNotice} />
+        <div className="card focus-running">
         {saved ? (
           <>
             <div className="grow still">{plant}</div>
@@ -153,6 +176,7 @@ export default function Focus() {
           </button>
         </div>
       </div>
+    </>
     );
   }
 
@@ -160,6 +184,7 @@ export default function Focus() {
   return (
     <>
       <h1 className="page-title">Focus ⏱️</h1>
+      <RecoveryBanner notice={f.recoveredNotice} onDismiss={f.dismissRecoveredNotice} />
 
       {subjects.length === 0 ? (
         <section className="card">

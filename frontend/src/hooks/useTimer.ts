@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// targetMs = null means "count up forever" (stopwatch).
-export function useTimer(targetMs: number | null, onComplete: () => void) {
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [running, setRunning] = useState(false);
+export function useTimer(
+  targetMs: number | null,
+  onComplete: () => void,
+  initialElapsedMs = 0,
+  initialRunning = false
+) {
+  const [elapsedMs, setElapsedMs] = useState(initialElapsedMs);
+  const [running, setRunning] = useState(initialRunning);
+  const [initialNow] = useState(() => (initialRunning ? Date.now() : null));
 
-  const startedAt = useRef<number | null>(null); // when the current run began
-  const accumulated = useRef(0); // time from earlier runs (before pauses)
+  const startedAt = useRef<number | null>(initialNow); // when the current run began
+  const accumulated = useRef(initialElapsedMs); // time from earlier runs (before pauses)
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => {
@@ -15,7 +20,8 @@ export function useTimer(targetMs: number | null, onComplete: () => void) {
 
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => {
+
+    const checkTick = () => {
       const live = startedAt.current !== null ? Date.now() - startedAt.current : 0;
       const elapsed = accumulated.current + live;
 
@@ -28,8 +34,21 @@ export function useTimer(targetMs: number | null, onComplete: () => void) {
       } else {
         setElapsedMs(elapsed);
       }
-    }, 250);
-    return () => window.clearInterval(id);
+    };
+
+    const id = window.setInterval(checkTick, 250);
+
+    const onWake = () => {
+      if (!document.hidden) checkTick();
+    };
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+    };
   }, [running, targetMs]);
 
   const start = useCallback(() => {
@@ -57,5 +76,22 @@ export function useTimer(targetMs: number | null, onComplete: () => void) {
     setRunning(false);
   }, []);
 
-  return { elapsedMs, running, start, pause, reset };
+  const hydrate = useCallback((initialElapsedMs: number, isRunning: boolean) => {
+    accumulated.current = initialElapsedMs;
+    startedAt.current = isRunning ? Date.now() : null;
+    setElapsedMs(initialElapsedMs);
+    setRunning(isRunning);
+  }, []);
+
+  const getSnapshot = useCallback(() => {
+    const live = running && startedAt.current !== null ? Math.max(0, Date.now() - startedAt.current) : 0;
+    return {
+      accumulatedMs: accumulated.current,
+      startedAt: startedAt.current,
+      running,
+      elapsedMs: accumulated.current + live,
+    };
+  }, [running]);
+
+  return { elapsedMs, running, start, pause, reset, hydrate, getSnapshot };
 }

@@ -49,6 +49,10 @@ export interface FocusContextValue {
   needsFullscreen: boolean; // full screen was left during a strict session
   returnToFullscreen: () => void;
 
+  // Recovery notice
+  recoveredNotice: string | null;
+  dismissRecoveredNotice: () => void;
+
   startFocus: () => void;
   startBreak: () => void;
   backToSetup: () => void;
