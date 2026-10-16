@@ -6,6 +6,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "./firebase";
+import { clearAiSettingsOnLogout } from "../utils/aiSettings";
 
 export async function signup(name: string, email: string, password: string) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -18,6 +19,7 @@ export function login(email: string, password: string) {
 }
 
 export function logout() {
+  clearAiSettingsOnLogout();
   return signOut(auth);
 }
 
