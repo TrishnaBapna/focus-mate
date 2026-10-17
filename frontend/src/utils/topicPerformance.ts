@@ -74,9 +74,13 @@ export const MIN_QUESTIONS_REQUIRED = 5;
 
 /**
  * Thresholds:
- * - Needs Revision: overall < 65% and recent < 70% (or recent attempt < 50%)
- * - Improving: overall < 75% but recent >= 75%
- * - On Track: overall >= 65% and recent >= 65%
+ * - PASSING_THRESHOLD (0.65): Minimum benchmark for acceptable retention (65%).
+ *   - Both overall >= 65% and recent >= 65% -> "on_track".
+ *   - Overall >= 65% but recent < 65% -> "needs_revision" (slipping backward).
+ *   - Overall < 65% but recent >= 65% -> "improving" (recovery turnaround).
+ *   - Both overall < 65% and recent < 65% -> "needs_revision" (below target).
+ * - Critical Collapse (< 0.50): If recent attempt drops below 50%, "needs_revision" regardless of historical score.
+ * - MASTERY_THRESHOLD (0.75): Reaching 75% recent from lower baseline classifies as "improving".
  */
 export const PASSING_THRESHOLD = 0.65;
 export const MASTERY_THRESHOLD = 0.75;
