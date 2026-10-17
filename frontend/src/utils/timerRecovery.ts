@@ -92,14 +92,14 @@ export function isValidStoredSession(
 
   if (d.version !== RECOVERY_VERSION) return false;
   if (d.uid !== expectedUid) return false;
-  if (d.phase !== "focus" && d.phase !== "break") return false;
+  if (d.phase !== "focus" && d.phase !== "break" && d.phase !== "focusDone") return false;
   if (d.mode !== "pomodoro" && d.mode !== "timer" && d.mode !== "stopwatch") return false;
   if (typeof d.subjectId !== "string") return false;
   if (typeof d.topic !== "string") return false;
   if (typeof d.goal !== "string") return false;
 
-  if (typeof d.focusMinutes !== "number" || !Number.isFinite(d.focusMinutes) || d.focusMinutes <= 0) return false;
-  if (typeof d.breakMinutes !== "number" || !Number.isFinite(d.breakMinutes) || d.breakMinutes <= 0) return false;
+  if (typeof d.focusMinutes !== "number" || !Number.isFinite(d.focusMinutes) || d.focusMinutes < 0) return false;
+  if (typeof d.breakMinutes !== "number" || !Number.isFinite(d.breakMinutes) || d.breakMinutes < 0) return false;
   if (typeof d.accumulatedMs !== "number" || !Number.isFinite(d.accumulatedMs) || d.accumulatedMs < 0) return false;
   if (typeof d.savedAt !== "number" || !Number.isFinite(d.savedAt) || d.savedAt <= 0) return false;
 
@@ -111,6 +111,7 @@ export function isValidStoredSession(
   if (typeof d.awayCount !== "number" || d.awayCount < 0) return false;
   if (typeof d.awaySeconds !== "number" || d.awaySeconds < 0) return false;
   if (d.clientSessionId !== undefined && (typeof d.clientSessionId !== "string" || !d.clientSessionId)) return false;
+  if (d.completedPayload !== undefined && (typeof d.completedPayload !== "object" || !d.completedPayload)) return false;
 
   return true;
 }
@@ -119,6 +120,15 @@ export function evaluateRecoveredSession(
   session: StoredFocusSession,
   now = Date.now()
 ): RecoveredSessionState {
+  if (session.phase === "focusDone") {
+    return {
+      session,
+      calculatedElapsedMs: session.accumulatedMs,
+      targetMs: session.focusMinutes * 60000,
+      isExpired: true,
+    };
+  }
+
   let calculatedElapsedMs = session.accumulatedMs;
   if (session.running && session.startedAt !== null) {
     const live = Math.max(0, now - session.startedAt);

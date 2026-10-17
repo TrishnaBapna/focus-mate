@@ -68,7 +68,7 @@ export default function DashboardGoalsCard() {
         <div
           className="dash-track"
           role="progressbar"
-          aria-valuenow={Math.min(100, summary.totalProgressPercent)}
+          aria-valuenow={Math.min(100, Math.max(0, Math.round(summary.totalProgressPercent)))}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`Overall weekly study goals progress: ${summary.totalProgressPercent}%`}
@@ -95,7 +95,7 @@ export default function DashboardGoalsCard() {
               <div
                 className="dash-mini-track"
                 role="progressbar"
-                aria-valuenow={Math.min(100, item.progressPercent)}
+                aria-valuenow={Math.min(100, Math.max(0, Math.round(item.progressPercent)))}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-label={`${item.subject.name} study goal progress: ${item.progressPercent}%`}

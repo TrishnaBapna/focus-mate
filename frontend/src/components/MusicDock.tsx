@@ -141,6 +141,8 @@ export default function MusicDock() {
         onClick={m.togglePanel}
         aria-label="Focus music"
         title="Focus music"
+        aria-expanded={m.panelOpen}
+        aria-haspopup="dialog"
       >
         {playing ? (
           <span className="eq" aria-hidden="true">

@@ -21,7 +21,13 @@ export default function MoreMenu({ items }: { items: NavItem[] }) {
         </div>
       )}
 
-      <button className={`more-btn ${open ? "open" : ""}`} onClick={() => setOpen(!open)}>
+      <button
+        className={`more-btn ${open ? "open" : ""}`}
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-label="More navigation links"
+      >
         <span className="side-icon">☰</span>
         <span className="side-label">More</span>
       </button>

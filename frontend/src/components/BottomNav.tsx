@@ -40,7 +40,13 @@ export default function BottomNav() {
             <span className="bn-label">{l.label}</span>
           </NavLink>
         ))}
-        <button className={`bn-more ${open ? "open" : ""}`} onClick={() => setOpen(!open)}>
+        <button
+          className={`bn-more ${open ? "open" : ""}`}
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-haspopup="true"
+          aria-label="More navigation links"
+        >
           <span className="bn-icon">
             <Icon name="dots" size={22} />
           </span>

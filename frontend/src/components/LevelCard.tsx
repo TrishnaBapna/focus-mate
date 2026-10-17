@@ -11,7 +11,7 @@ export default function LevelCard() {
       <div
         className="progress"
         role="progressbar"
-        aria-valuenow={level.percent}
+        aria-valuenow={Math.min(100, Math.max(0, Math.round(level.percent)))}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label={`Level ${level.level} progress: ${level.percent}% (${level.current} of ${level.needed} XP)`}

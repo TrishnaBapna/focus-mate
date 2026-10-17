@@ -298,8 +298,8 @@ function TopicRow({
   item: TopicPerformance;
   onLogScore: () => void;
 }) {
-  const percent = Math.round(item.overallAccuracy * 100);
-  const recentPercent = Math.round(item.recentAccuracy * 100);
+  const percent = Math.min(100, Math.max(0, Math.round(item.overallAccuracy * 100)));
+  const recentPercent = Math.min(100, Math.max(0, Math.round(item.recentAccuracy * 100)));
 
   // Fill color based on status
   let barClass = "bar-accent";
@@ -344,7 +344,7 @@ function TopicRow({
           >
             <div
               className={`topic-progress-fill ${barClass}`}
-              style={{ width: `${percent}%` }}
+              style={{ width: `${item.status === "not_enough_data" ? 0 : percent}%` }}
             />
           </div>
           <span className="topic-pct-label">

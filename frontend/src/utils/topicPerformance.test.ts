@@ -8,6 +8,7 @@ import {
 } from "./topicPerformance.ts";
 import type { AssessmentResult } from "../types/assessment.ts";
 import type { Exam } from "../types/exam.ts";
+import { daysUntil } from "./exams.ts";
 import type { Timestamp } from "firebase/firestore";
 
 const assert = {
@@ -735,6 +736,193 @@ console.log("Running Weak Topic Detection & Smart Revision logic tests...");
   assert.strictEqual(recs[0].isReviewed, false);
   assert.strictEqual(recs[0].urgency, "high"); // Full urgency restored
   console.log("✔ Expired review marker (> 7 days) correctly expires and restores recommendation urgency");
+}
+
+// 14. Comprehensive Decision Table & Boundary Thresholds (60%, 65%, insufficient data, midnight)
+{
+  // Row 1: 1 attempt with 100% (insufficient attempts) -> must NEVER produce strong on_track classification
+  const oneAttempt: AssessmentResult[] = [
+    {
+      id: "row1",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Limits",
+      score: 10,
+      totalQuestions: 10,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+  ];
+  const eval1 = classifyTopicPerformance(oneAttempt);
+  assert.strictEqual(eval1[0].status, "not_enough_data", "1 attempt must remain not_enough_data even if 100%");
+
+  // Row 2: 2 attempts but only 4 total questions (< 5) -> not_enough_data
+  const fourQuestions: AssessmentResult[] = [
+    {
+      id: "row2_a",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Limits",
+      score: 2,
+      totalQuestions: 2,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+    {
+      id: "row2_b",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Limits",
+      score: 2,
+      totalQuestions: 2,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+  ];
+  const eval2 = classifyTopicPerformance(fourQuestions);
+  assert.strictEqual(eval2[0].status, "not_enough_data", "4 total questions must remain not_enough_data");
+
+  // Helper function to create 2 attempts with desired overall & recent accuracy
+  function makeTwoAttempts(s1: number, t1: number, s2: number, t2: number): AssessmentResult[] {
+    return [
+      {
+        id: "att1",
+        subjectId: "cs",
+        subjectName: "CS",
+        topic: "Trees",
+        score: s1,
+        totalQuestions: t1,
+        accuracy: calculateAccuracy(s1, t1),
+        source: "quiz",
+        createdAt: mockTimestamp(1000),
+      },
+      {
+        id: "att2",
+        subjectId: "cs",
+        subjectName: "CS",
+        topic: "Trees",
+        score: s2,
+        totalQuestions: t2,
+        accuracy: calculateAccuracy(s2, t2),
+        source: "quiz",
+        createdAt: mockTimestamp(2000),
+      },
+    ];
+  }
+
+  // Row 3: Exactly 60% overall, 60% recent (3/5 and 3/5 = 6/10 = 60%) -> needs_revision
+  const eval60 = classifyTopicPerformance(makeTwoAttempts(3, 5, 3, 5));
+  assert.strictEqual(eval60[0].overallAccuracy, 0.6);
+  assert.strictEqual(eval60[0].recentAccuracy, 0.6);
+  assert.strictEqual(eval60[0].status, "needs_revision", "60% overall & 60% recent must be needs_revision");
+
+  // Row 4: 64% overall, 64% recent (just below 65% boundary) -> needs_revision
+  // 64/100: 32/50 and 32/50
+  const eval64 = classifyTopicPerformance(makeTwoAttempts(32, 50, 32, 50));
+  assert.strictEqual(eval64[0].overallAccuracy, 0.64);
+  assert.strictEqual(eval64[0].status, "needs_revision", "64% overall & recent must be needs_revision");
+
+  // Row 5: 65% overall, 64% recent (historical at boundary, recent fell below) -> needs_revision
+  // att1: 33/50 (66%), att2: 32/50 (64%). Total: 65/100 = 65% overall, 64% recent
+  const eval65_64 = classifyTopicPerformance(makeTwoAttempts(33, 50, 32, 50));
+  assert.strictEqual(eval65_64[0].overallAccuracy, 0.65);
+  assert.strictEqual(eval65_64[0].recentAccuracy, 0.64);
+  assert.strictEqual(eval65_64[0].status, "needs_revision", "65% overall with 64% recent must be needs_revision");
+
+  // Row 6: 60% overall, 65% recent (recovering at 65% boundary) -> improving
+  // att1: 11/20 (55%), att2: 13/20 (65%). Total: 24/40 = 60% overall, 65% recent
+  const eval60_65 = classifyTopicPerformance(makeTwoAttempts(11, 20, 13, 20));
+  assert.strictEqual(eval60_65[0].overallAccuracy, 0.6);
+  assert.strictEqual(eval60_65[0].recentAccuracy, 0.65);
+  assert.strictEqual(eval60_65[0].status, "improving", "60% overall with 65% recent must be improving");
+
+  // Row 7: Exactly 65% overall, 65% recent (both at exact passing boundary) -> on_track
+  // att1: 13/20 (65%), att2: 13/20 (65%). Total: 26/40 = 65%
+  const eval65_65 = classifyTopicPerformance(makeTwoAttempts(13, 20, 13, 20));
+  assert.strictEqual(eval65_65[0].overallAccuracy, 0.65);
+  assert.strictEqual(eval65_65[0].recentAccuracy, 0.65);
+  assert.strictEqual(eval65_65[0].status, "on_track", "65% overall and 65% recent must be on_track");
+
+  // Row 8: 66% overall, 66% recent (just above 65% boundary) -> on_track
+  const eval66 = classifyTopicPerformance(makeTwoAttempts(33, 50, 33, 50));
+  assert.strictEqual(eval66[0].overallAccuracy, 0.66);
+  assert.strictEqual(eval66[0].status, "on_track", "66% overall and 66% recent must be on_track");
+
+  // Row 9: 75% overall, 40% recent (< 50% recent collapse) -> needs_revision
+  const collapseItem = makeTwoAttempts(10, 10, 2, 5);
+  const evalCol = classifyTopicPerformance(collapseItem);
+  assert.strictEqual(evalCol[0].recentAccuracy, 0.4);
+  assert.strictEqual(evalCol[0].status, "needs_revision", "Recent score < 50% must trigger needs_revision");
+
+  console.log("✔ Complete decision table rows and 60%/65% boundary thresholds verified");
+}
+
+// 15. Exact 7-day review expiration boundary and midnight calculations
+{
+  const now = new Date("2026-10-17T12:00:00.000Z");
+  const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+  // Exact 7 days ago (to the millisecond)
+  const exact7DaysAgo = new Date(now.getTime() - sevenDaysMs);
+  const reviewedMapExact = new Map<string, string>();
+  const topicKey = normalizeTopicKey("chem", "Bonds");
+  reviewedMapExact.set(topicKey, exact7DaysAgo.toISOString());
+
+  const assessments: AssessmentResult[] = [
+    {
+      id: "b1",
+      subjectId: "chem",
+      subjectName: "Chem",
+      topic: "Bonds",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(exact7DaysAgo.getTime() - 5000),
+    },
+    {
+      id: "b2",
+      subjectId: "chem",
+      subjectName: "Chem",
+      topic: "Bonds",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(exact7DaysAgo.getTime() - 1000),
+    },
+  ];
+
+  const evalExact = classifyTopicPerformance(assessments, { reviewedMap: reviewedMapExact, now });
+  assert.strictEqual(evalExact[0].isReviewedRecently, true, "At exactly 7 days (inclusive <=), review is still active");
+
+  // 7 days + 1 millisecond ago -> expired
+  const expired7DaysAgo = new Date(now.getTime() - sevenDaysMs - 1);
+  const reviewedMapExpired = new Map<string, string>();
+  reviewedMapExpired.set(topicKey, expired7DaysAgo.toISOString());
+
+  const evalExpired = classifyTopicPerformance(assessments, { reviewedMap: reviewedMapExpired, now });
+  assert.strictEqual(evalExpired[0].isReviewedRecently, false, "At 7 days + 1ms, review marker is strictly expired");
+
+  // Midnight calculations in daysUntil
+  const baseDate = new Date("2026-10-17T00:00:00.000");
+  const targetDateStr = "2026-10-20"; // 3 days away
+
+  // 1 minute before midnight on Oct 17
+  const nightBefore = new Date(baseDate);
+  nightBefore.setHours(23, 59, 59, 999);
+  const daysAtNight = daysUntil(targetDateStr, nightBefore);
+  assert.strictEqual(daysAtNight, 3, "23:59:59 on Oct 17 is still 3 days away from Oct 20");
+
+  // 1 millisecond after midnight on Oct 18
+  const nextMorning = new Date(baseDate.getTime() + 24 * 60 * 60 * 1000 + 1);
+  const daysNextDay = daysUntil(targetDateStr, nextMorning);
+  assert.strictEqual(daysNextDay, 2, "00:00:00 on Oct 18 is exactly 2 days away from Oct 20");
+
+  console.log("✔ Exact 7-day TTL boundary and midnight date consistency verified");
 }
 
 console.log("\nAll Weak Topic Detection & Smart Revision tests passed successfully! 🎉");

@@ -3,6 +3,7 @@ const LENGTH = 2 * Math.PI * RADIUS;
 
 // The green ring: how much of today's focus goal is done
 export default function PerformanceCard({ percent }: { percent: number }) {
+  const clamped = Math.min(100, Math.max(0, Math.round(percent)));
   return (
     <section className="wf-card perf">
       <h3>Focus Performance</h3>
@@ -11,10 +12,10 @@ export default function PerformanceCard({ percent }: { percent: number }) {
         className="perf-ring"
         viewBox="0 0 120 120"
         role="progressbar"
-        aria-valuenow={percent}
+        aria-valuenow={clamped}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`${percent}% of today's focus goal`}
+        aria-label={`${clamped}% of today's focus goal`}
       >
         <circle className="ring-bg" cx="60" cy="60" r={RADIUS} />
         <circle
@@ -22,11 +23,11 @@ export default function PerformanceCard({ percent }: { percent: number }) {
           cx="60"
           cy="60"
           r={RADIUS}
-          strokeDasharray={`${(percent / 100) * LENGTH} ${LENGTH}`}
+          strokeDasharray={`${(clamped / 100) * LENGTH} ${LENGTH}`}
           transform="rotate(-90 60 60)"
         />
         <text className="perf-pct" x="60" y="67" textAnchor="middle">
-          {percent}%
+          {clamped}%
         </text>
       </svg>
       <span className="perf-legend">

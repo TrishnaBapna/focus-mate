@@ -21,7 +21,7 @@ export default function Achievements() {
         <div
           className="progress big"
           role="progressbar"
-          aria-valuenow={level.percent}
+          aria-valuenow={Math.min(100, Math.max(0, Math.round(level.percent)))}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`Level ${level.level} progress: ${level.percent}% (${level.current} of ${level.needed} XP)`}
@@ -72,7 +72,7 @@ export default function Achievements() {
                   <div
                     className="progress"
                     role="progressbar"
-                    aria-valuenow={a.percent}
+                    aria-valuenow={Math.min(100, Math.max(0, Math.round(a.percent)))}
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-label={`${a.title} badge progress: ${a.percent}% (${formatProgress(a)})`}

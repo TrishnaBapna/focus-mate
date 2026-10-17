@@ -53,7 +53,7 @@ export default function SubjectGoalCard({ item, onEdit, onRemove }: Props) {
         <div
           className="goal-progress-track"
           role="progressbar"
-          aria-valuenow={progressPercent}
+          aria-valuenow={Math.min(100, Math.max(0, Math.round(progressPercent)))}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`${subject.name} weekly goal progress: ${progressPercent}% (${actualTimeText} of ${targetText})`}

@@ -30,7 +30,7 @@ export default function ExamCountdownCard() {
                 <div
                   className="progress"
                   role="progressbar"
-                  aria-valuenow={progress.percent}
+                  aria-valuenow={Math.min(100, Math.max(0, Math.round(progress.percent)))}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={`${e.name} syllabus progress: ${progress.percent}% (${progress.done} of ${progress.total} topics ready)`}

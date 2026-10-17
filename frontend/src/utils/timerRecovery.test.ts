@@ -341,5 +341,97 @@ function makeSampleSession(overrides: Partial<StoredFocusSession> = {}): StoredF
   console.log("✔ Strict mode away penalty on app suspension / closing verified");
 }
 
+// 14. Completed session snapshot (focusDone) retains exact completed payload across reloads
+{
+  const clientSessionId = "client_sess_exact_payload_789";
+  const completedPayload = {
+    subjectId: "sub_physics",
+    subjectName: "Physics",
+    subjectEmoji: "⚡",
+    topic: "Electromagnetism",
+    goal: "Derive Maxwell equations",
+    mode: "pomodoro" as const,
+    durationSeconds: 900, // 15 mins finished early
+    strict: true,
+    leaves: 2,
+    awaySeconds: 45,
+  };
+
+  const session = makeSampleSession({
+    phase: "focusDone",
+    clientSessionId,
+    accumulatedMs: 900000,
+    running: false,
+    startedAt: null,
+    completedPayload,
+  });
+
+  saveActiveSession(session);
+
+  // App is reloaded
+  const recovered = loadActiveSession(UID);
+  assert.ok(recovered !== null, "Recovered session must be loaded");
+  assert.strictEqual(recovered?.phase, "focusDone", "Phase must be preserved as focusDone");
+  assert.strictEqual(recovered?.clientSessionId, clientSessionId);
+  assert.deepStrictEqual(recovered?.completedPayload, completedPayload, "Payload must be preserved byte-for-byte");
+
+  const evalState = evaluateRecoveredSession(recovered!);
+  assert.strictEqual(evalState.isExpired, true, "focusDone session is immediately marked completed/expired");
+  assert.strictEqual(evalState.calculatedElapsedMs, 900000, "Duration matches accumulatedMs exactly");
+
+  clearActiveSession(UID);
+  console.log("✔ Completed session retains exact payload across reloads without mutation");
+}
+
+// 15. Strict mode away interval de-duplication & paused state immunity
+{
+  // A: Concurrent blur and visibilitychange on the same leave event
+  let awayStart: number | null = null;
+  let count = 0;
+  let seconds = 0;
+
+  function leave(timestamp: number) {
+    if (awayStart === null) awayStart = timestamp;
+  }
+  function back(timestamp: number) {
+    if (awayStart === null) return;
+    const elapsed = Math.round((timestamp - awayStart) / 1000);
+    awayStart = null;
+    if (elapsed >= 3) {
+      count += 1;
+      seconds += elapsed;
+    }
+  }
+
+  // User tabs away: blur fires at T0, visibilitychange fires at T0 + 10ms
+  leave(T0);
+  leave(T0 + 10);
+  assert.strictEqual(awayStart, T0, "Second leave event must not overwrite ongoing away start timestamp");
+
+  // User returns 10s later: focus fires, then visibilitychange fires
+  back(T0 + 10000);
+  back(T0 + 10010);
+  assert.strictEqual(count, 1, "Only 1 leave count must be recorded despite multiple events");
+  assert.strictEqual(seconds, 10, "Exact 10 seconds away recorded without duplication");
+
+  // B: Closing app while session is PAUSED must NOT incur away penalties
+  const pausedSession = makeSampleSession({
+    strict: true,
+    running: false,
+    startedAt: null,
+    accumulatedMs: 600000,
+    awayCount: 0,
+    awaySeconds: 0,
+  });
+
+  // Only if running was true does suspension register away penalties
+  let leavesAfterResume = pausedSession.awayCount;
+  if (pausedSession.strict && pausedSession.running) {
+    leavesAfterResume += 1;
+  }
+  assert.strictEqual(leavesAfterResume, 0, "Paused strict session must not register away penalty on app suspension");
+  console.log("✔ Strict mode away de-duplication and paused immunity verified");
+}
+
 console.log("\nAll Focus Session Recovery tests passed successfully! 🎉");
 

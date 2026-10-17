@@ -66,6 +66,7 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
 
   const [phase, setPhase] = useState<Phase>(() => {
     if (!initial.session) return "setup";
+    if (initial.session.phase === "focusDone") return "focusDone";
     if (initial.evaluation?.isExpired) {
       return initial.session.phase === "focus" ? "focusDone" : "setup";
     }
@@ -79,12 +80,24 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
   const [breakMinutes, setBreakMinutes] = useState<number>(() => initial.session?.breakMinutes ?? 5);
   const [strict, setStrict] = useState<boolean>(() => initial.session?.strict ?? false);
   const [result, setResult] = useState<FocusResult | null>(() => {
+    if (initial.session?.phase === "focusDone" && initial.session.completedPayload) {
+      const payload = initial.session.completedPayload;
+      return {
+        seconds: payload.durationSeconds,
+        status: "error",
+        clientSessionId: initial.session.clientSessionId,
+        savedPayload: payload,
+        strict: payload.strict,
+        leaves: payload.leaves,
+        awaySeconds: payload.awaySeconds,
+      };
+    }
     if (initial.session && initial.evaluation?.isExpired && initial.session.phase === "focus") {
       const targetSecs = Math.round((initial.evaluation.targetMs ?? 0) / 1000);
       const isStrict = initial.session.strict;
       let leaves = initial.session.awayCount;
       let awaySeconds = initial.session.awaySeconds;
-      if (isStrict) {
+      if (isStrict && initial.session.running) {
         leaves += 1;
         const elapsedBeforeClose = Math.round((initial.session.accumulatedMs ?? 0) / 1000);
         awaySeconds += Math.max(0, targetSecs - elapsedBeforeClose);
@@ -105,6 +118,9 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
   // Recovery notice for the user
   const [recoveredNotice, setRecoveredNotice] = useState<string | null>(() => {
     if (!initial.session) return null;
+    if (initial.session.phase === "focusDone") {
+      return "Your completed session is ready to save to your profile. ⏱️";
+    }
     if (initial.evaluation?.isExpired) {
       return initial.session.phase === "focus"
         ? "Your focus session completed while you were away! 🎉"
@@ -223,11 +239,11 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
             ...(wasStrict ? { strict: true, leaves, awaySeconds } : {}),
           };
 
-          // Retain snapshot in localStorage with clientSessionId before Firestore write
+          // Retain snapshot in localStorage with phase: focusDone, clientSessionId, and completedPayload before Firestore write
           saveActiveSession({
             version: 1,
             uid: user.uid,
-            phase: "focus",
+            phase: "focusDone",
             mode: targetMode,
             subjectId: activeSubject.id,
             subjectName: activeSubject.name,
@@ -244,6 +260,7 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
             awayCount: leaves,
             awaySeconds,
             clientSessionId,
+            completedPayload: savedPayload,
           });
 
           try {
@@ -371,11 +388,23 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (session.phase === "focusDone" && session.completedPayload) {
+      addSession(user.uid, session.completedPayload, session.clientSessionId)
+        .then((ref) => {
+          clearActiveSession(session.uid);
+          setResult((prev) => prev ? { ...prev, status: "saved", sessionId: ref.id } : null);
+        })
+        .catch((err) => {
+          console.error("Failed to save recovered focus session:", err);
+        });
+      return;
+    }
+
     if (session.phase === "focus") {
       const seconds = Math.round((evaluation.targetMs ?? 0) / 1000);
       let leaves = session.awayCount;
       let awaySeconds = session.awaySeconds;
-      if (session.strict) {
+      if (session.strict && session.running) {
         leaves += 1;
         const elapsedBeforeClose = Math.round((session.accumulatedMs ?? 0) / 1000);
         awaySeconds += Math.max(0, seconds - elapsedBeforeClose);
@@ -417,12 +446,14 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
         ...(session.strict ? { strict: true, leaves, awaySeconds } : {}),
       };
 
-      // Retain snapshot in localStorage with clientSessionId and updated away stats
+      // Retain snapshot in localStorage with phase: focusDone, clientSessionId, completedPayload, and updated away stats
       saveActiveSession({
         ...session,
+        phase: "focusDone",
         clientSessionId,
         awayCount: leaves,
         awaySeconds,
+        completedPayload: payload,
       });
 
       addSession(user.uid, payload, clientSessionId)

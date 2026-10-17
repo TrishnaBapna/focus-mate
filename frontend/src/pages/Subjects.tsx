@@ -202,7 +202,7 @@ export default function Subjects() {
                 <div
                   className="banner-progress-track"
                   role="progressbar"
-                  aria-valuenow={Math.min(100, summary.totalProgressPercent)}
+                  aria-valuenow={Math.min(100, Math.max(0, Math.round(summary.totalProgressPercent)))}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-label={`Overall weekly study target progress: ${summary.totalProgressPercent}%`}

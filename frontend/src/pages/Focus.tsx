@@ -65,12 +65,15 @@ export default function Focus() {
           <div
             className="progress"
             role="progressbar"
-            aria-valuenow={Math.round(f.progress)}
+            aria-valuenow={Math.min(100, Math.max(0, Math.round(f.progress)))}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label={`${isBreak ? "Break" : "Focus"} session progress`}
           >
-            <div className="progress-fill" style={{ width: `${f.progress}%` }} />
+            <div
+              className="progress-fill"
+              style={{ width: `${Math.min(100, Math.max(0, f.progress))}%` }}
+            />
           </div>
         )}
 

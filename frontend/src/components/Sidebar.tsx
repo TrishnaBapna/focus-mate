@@ -46,6 +46,8 @@ export default function Sidebar() {
                 className={`rail-link ${open ? "open" : ""}`}
                 title="More"
                 aria-label="More"
+                aria-expanded={open}
+                aria-haspopup="true"
                 onClick={() => setOpen(!open)}
               >
                 <Icon name="dots" />

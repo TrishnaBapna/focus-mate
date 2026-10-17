@@ -54,6 +54,8 @@ export default function NotificationsBell() {
         className="icon-btn"
         aria-label="Suggestions"
         title="Suggestions"
+        aria-expanded={open}
+        aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
         <Icon name="bell" size={18} />

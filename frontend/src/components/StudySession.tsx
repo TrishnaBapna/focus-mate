@@ -101,7 +101,10 @@ export default function StudySession({
     );
   }
 
-  const progress = initial > 0 ? Math.max(0, 100 - (queue.length / initial) * 100) : 100;
+  const progress =
+    initial > 0
+      ? Math.min(100, Math.max(0, Math.round(100 - (queue.length / initial) * 100)))
+      : 100;
 
   return (
     <div className="study-wrap">
