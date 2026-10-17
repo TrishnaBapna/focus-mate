@@ -8,7 +8,14 @@ export default function LevelCard() {
   return (
     <section className="card">
       <h3>Level {level.level}</h3>
-      <div className="progress">
+      <div
+        className="progress"
+        role="progressbar"
+        aria-valuenow={level.percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Level ${level.level} progress: ${level.percent}% (${level.current} of ${level.needed} XP)`}
+      >
         <div className="progress-fill" style={{ width: `${level.percent}%` }} />
       </div>
       <p className="muted level-xp">

@@ -120,10 +120,17 @@ export default function Analytics() {
                     </span>
                     <strong>{formatDuration(s.seconds)}</strong>
                   </div>
-                  <div className="progress">
+                  <div
+                    className="progress"
+                    role="progressbar"
+                    aria-valuenow={maxSubject > 0 ? Math.round((s.seconds / maxSubject) * 100) : 0}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${s.name} focus duration: ${formatDuration(s.seconds)}`}
+                  >
                     <div
                       className="progress-fill"
-                      style={{ width: `${(s.seconds / maxSubject) * 100}%` }}
+                      style={{ width: `${maxSubject > 0 ? (s.seconds / maxSubject) * 100 : 0}%` }}
                     />
                   </div>
                 </li>

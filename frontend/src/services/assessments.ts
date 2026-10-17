@@ -10,7 +10,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { calculateAccuracy } from "../utils/topicPerformance";
+import { calculateAccuracy, normalizeTopicKey } from "../utils/topicPerformance";
 import type { AssessmentResult, ReviewedTopicRecord } from "../types/assessment";
 
 const assessmentsRef = (uid: string) => collection(db, "users", uid, "assessments");
@@ -20,6 +20,7 @@ export type AssessmentInput = Omit<AssessmentResult, "id" | "createdAt" | "accur
 
 /**
  * Persists an assessment result (from a quiz, flashcard review, or test) under users/{uid}/assessments.
+ * Automatically invalidates any existing reviewed marker so fresh evidence takes effect immediately.
  */
 export async function addAssessment(uid: string, data: AssessmentInput): Promise<string> {
   const accuracy = calculateAccuracy(data.score, data.totalQuestions);
@@ -28,6 +29,16 @@ export async function addAssessment(uid: string, data: AssessmentInput): Promise
     accuracy,
     createdAt: serverTimestamp(),
   });
+
+  try {
+    const topicKey = normalizeTopicKey(data.subjectId, data.topic);
+    const docId = docIdForTopicKey(topicKey);
+    const targetDoc = doc(db, "users", uid, "reviewedTopics", docId);
+    await deleteDoc(targetDoc).catch(() => {});
+  } catch {
+    // non-blocking
+  }
+
   return ref.id;
 }
 

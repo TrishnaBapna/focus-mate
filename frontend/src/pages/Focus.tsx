@@ -62,7 +62,14 @@ export default function Focus() {
         <div className="clock">{f.clockText}</div>
 
         {f.hasTarget && (
-          <div className="progress">
+          <div
+            className="progress"
+            role="progressbar"
+            aria-valuenow={Math.round(f.progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${isBreak ? "Break" : "Focus"} session progress`}
+          >
             <div className="progress-fill" style={{ width: `${f.progress}%` }} />
           </div>
         )}
@@ -157,7 +164,19 @@ export default function Focus() {
           <p className="empty-note">Under 1 minute, so no plant this time.</p>
         )}
         {f.result.status === "error" && (
-          <p className="auth-error">Couldn't save this session. Check your connection.</p>
+          <div className="save-error-banner" style={{ margin: "1rem 0", textAlign: "center" }}>
+            <p className="auth-error" style={{ marginBottom: "0.5rem" }}>
+              ⚠️ Couldn't save this session to your profile. Check your connection.
+            </p>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => void f.retrySaveSession()}
+              disabled={f.isRetryingSave}
+            >
+              {f.isRetryingSave ? "Saving…" : "🔄 Retry Save"}
+            </button>
+          </div>
         )}
 
         <div className="focus-controls">

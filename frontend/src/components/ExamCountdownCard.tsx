@@ -27,7 +27,14 @@ export default function ExamCountdownCard() {
             </div>
             {progress.total > 0 && (
               <>
-                <div className="progress">
+                <div
+                  className="progress"
+                  role="progressbar"
+                  aria-valuenow={progress.percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${e.name} syllabus progress: ${progress.percent}% (${progress.done} of ${progress.total} topics ready)`}
+                >
                   <div className="progress-fill" style={{ width: `${progress.percent}%` }} />
                 </div>
                 <span className="muted">

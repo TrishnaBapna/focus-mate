@@ -111,7 +111,14 @@ export default function StudySession({
         </button>
         <span className="muted">{queue.length} left</span>
       </div>
-      <div className="progress">
+      <div
+        className="progress"
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Flashcard study progress: ${progress}%`}
+      >
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
 

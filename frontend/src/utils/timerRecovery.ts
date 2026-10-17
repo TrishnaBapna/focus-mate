@@ -1,4 +1,4 @@
-import type { SessionMode } from "../types";
+import type { FocusSession, SessionMode } from "../types";
 
 export const TIMER_RECOVERY_KEY_PREFIX = "focusmate_active_session_";
 export const RECOVERY_VERSION = 1;
@@ -7,7 +7,7 @@ export const MAX_SESSION_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 export interface StoredFocusSession {
   version: 1;
   uid: string;
-  phase: "focus" | "break";
+  phase: "focus" | "break" | "focusDone";
   mode: SessionMode;
   subjectId: string;
   subjectName?: string;
@@ -23,6 +23,8 @@ export interface StoredFocusSession {
   savedAt: number;          // Epoch ms when snapshot was saved
   awayCount: number;
   awaySeconds: number;
+  clientSessionId?: string; // Idempotency key to prevent duplicate creation on retry
+  completedPayload?: Omit<FocusSession, "id">; // Retained payload for reliable retry
 }
 
 export interface RecoveredSessionState {
@@ -108,6 +110,7 @@ export function isValidStoredSession(
   if (d.startedAt !== null && (typeof d.startedAt !== "number" || !Number.isFinite(d.startedAt))) return false;
   if (typeof d.awayCount !== "number" || d.awayCount < 0) return false;
   if (typeof d.awaySeconds !== "number" || d.awaySeconds < 0) return false;
+  if (d.clientSessionId !== undefined && (typeof d.clientSessionId !== "string" || !d.clientSessionId)) return false;
 
   return true;
 }

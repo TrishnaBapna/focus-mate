@@ -397,4 +397,344 @@ console.log("Running Weak Topic Detection & Smart Revision logic tests...");
   console.log("✔ Smart revision recommendations correctly correlate weak topics with upcoming exams");
 }
 
+// 8. Low overall performance with improving recent performance
+{
+  const recoveringTopic: AssessmentResult[] = [
+    {
+      id: "rec1",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Trigonometry",
+      score: 1,
+      totalQuestions: 5,
+      accuracy: 0.2,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+    {
+      id: "rec2",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Trigonometry",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+    {
+      id: "rec3",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Trigonometry",
+      score: 4,
+      totalQuestions: 5,
+      accuracy: 0.8, // 80% on recent attempt!
+      source: "quiz",
+      createdAt: mockTimestamp(3000),
+    },
+  ];
+
+  const res = classifyTopicPerformance(recoveringTopic);
+  assert.strictEqual(res[0].status, "improving", "Low overall (46.7%) with 80% recent must be classified as improving");
+  assert.strictEqual(res[0].recentAccuracy, 0.8);
+  console.log("✔ Low overall performance with improving recent performance correctly classified as 'improving'");
+}
+
+// 9. Strong overall performance with declining recent performance
+{
+  const decliningTopic: AssessmentResult[] = [
+    {
+      id: "dec1",
+      subjectId: "cs",
+      subjectName: "Computer Science",
+      topic: "Data Structures",
+      score: 5,
+      totalQuestions: 5,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+    {
+      id: "dec2",
+      subjectId: "cs",
+      subjectName: "Computer Science",
+      topic: "Data Structures",
+      score: 5,
+      totalQuestions: 5,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+    {
+      id: "dec3",
+      subjectId: "cs",
+      subjectName: "Computer Science",
+      topic: "Data Structures",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4, // Dropped to 40% on recent attempt!
+      source: "quiz",
+      createdAt: mockTimestamp(3000),
+    },
+  ];
+
+  const res = classifyTopicPerformance(decliningTopic);
+  // Overall is 12/15 = 80%, but recent dropped to 40% (< 65% passing threshold)
+  assert.strictEqual(res[0].status, "needs_revision", "Strong overall with failing recent must be classified as needs_revision");
+  assert.strictEqual(res[0].recentAccuracy, 0.4);
+  assert.strictEqual(res[0].overallAccuracy, 0.8);
+  console.log("✔ Strong overall performance with declining recent performance correctly classified as 'needs_revision'");
+}
+
+// 10. Boundary conditions and insufficient data tests
+{
+  // A) Exact boundary: 65% overall and 65% recent -> on_track
+  const exactBoundaryPassing: AssessmentResult[] = [
+    {
+      id: "b1",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Boundary Pass",
+      score: 13,
+      totalQuestions: 20, // 65%
+      accuracy: 0.65,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+    {
+      id: "b2",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Boundary Pass",
+      score: 13,
+      totalQuestions: 20, // 65%
+      accuracy: 0.65,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+  ];
+  const passRes = classifyTopicPerformance(exactBoundaryPassing);
+  assert.strictEqual(passRes[0].status, "on_track", "65% overall and 65% recent is on_track");
+
+  // B) Just below boundary: 60% overall and 60% recent -> needs_revision
+  const belowBoundary: AssessmentResult[] = [
+    {
+      id: "b3",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Boundary Fail",
+      score: 3,
+      totalQuestions: 5, // 60%
+      accuracy: 0.6,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+    {
+      id: "b4",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Boundary Fail",
+      score: 3,
+      totalQuestions: 5, // 60%
+      accuracy: 0.6,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+  ];
+  const failRes = classifyTopicPerformance(belowBoundary);
+  assert.strictEqual(failRes[0].status, "needs_revision", "60% overall and recent is needs_revision");
+
+  // C) Insufficient attempts: 1 attempt with 20 questions -> not_enough_data
+  const singleAttempt: AssessmentResult[] = [
+    {
+      id: "b5",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Single Attempt",
+      score: 18,
+      totalQuestions: 20,
+      accuracy: 0.9,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+  ];
+  assert.strictEqual(classifyTopicPerformance(singleAttempt)[0].status, "not_enough_data");
+
+  // D) Insufficient questions: 2 attempts with 2 questions each (4 total) -> not_enough_data
+  const fewQuestions: AssessmentResult[] = [
+    {
+      id: "b6",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Few Questions",
+      score: 2,
+      totalQuestions: 2,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(1000),
+    },
+    {
+      id: "b7",
+      subjectId: "sub1",
+      subjectName: "Subject",
+      topic: "Few Questions",
+      score: 2,
+      totalQuestions: 2,
+      accuracy: 1.0,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+  ];
+  assert.strictEqual(classifyTopicPerformance(fewQuestions)[0].status, "not_enough_data");
+
+  console.log("✔ Boundary thresholds and insufficient data requirements verified");
+}
+
+// 11. Review invalidation when a new assessment arrives after reviewed marker
+{
+  const topicKey = normalizeTopicKey("math", "Algebra");
+  const reviewedMap = new Map<string, string>();
+  // Marked reviewed at T = 5000
+  reviewedMap.set(topicKey, new Date(5000).toISOString());
+
+  // Assessment 1 at T = 2000, Assessment 2 at T = 7000 (after review!)
+  const algebraAssessments: AssessmentResult[] = [
+    {
+      id: "alg1",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Algebra",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(2000),
+    },
+    {
+      id: "alg2",
+      subjectId: "math",
+      subjectName: "Math",
+      topic: "Algebra",
+      score: 1,
+      totalQuestions: 5, // Poor score after being marked reviewed
+      accuracy: 0.2,
+      source: "quiz",
+      createdAt: mockTimestamp(7000), // Newer than review timestamp (5000)
+    },
+  ];
+
+  const now = new Date(8000);
+  const evaluated = classifyTopicPerformance(algebraAssessments, { reviewedMap, now });
+  // Because new evidence arrived at T=7000 after review at T=5000, review status MUST be invalidated!
+  assert.strictEqual(evaluated[0].isReviewedRecently, false, "New assessment after review must invalidate reviewed status");
+
+  const recs = buildRevisionRecommendations(evaluated, [], reviewedMap);
+  assert.strictEqual(recs[0].isReviewed, false);
+  assert.strictEqual(recs[0].urgency, "high", "Without an exam, weak topic has high urgency and is not demoted to low");
+  console.log("✔ New assessment recorded after review marker safely invalidates reviewed status");
+}
+
+// 12. Imminent exam (< 3 days) protects urgency despite active review marker
+{
+  const topicKey = normalizeTopicKey("chem", "Acids");
+  const reviewedMap = new Map<string, string>();
+  // Marked reviewed 1 hour ago
+  const reviewedAt = new Date("2026-10-16T10:00:00Z");
+  reviewedMap.set(topicKey, reviewedAt.toISOString());
+
+  const assessments: AssessmentResult[] = [
+    {
+      id: "ac1",
+      subjectId: "chem",
+      subjectName: "Chemistry",
+      topic: "Acids",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(reviewedAt.getTime() - 10000),
+    },
+    {
+      id: "ac2",
+      subjectId: "chem",
+      subjectName: "Chemistry",
+      topic: "Acids",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(reviewedAt.getTime() - 5000),
+    },
+  ];
+
+  const now = new Date("2026-10-16T11:00:00Z");
+  const evaluated = classifyTopicPerformance(assessments, { reviewedMap, now });
+  assert.strictEqual(evaluated[0].isReviewedRecently, true);
+
+  // Chemistry exam is in 2 days!
+  const examDate = new Date(now);
+  examDate.setDate(examDate.getDate() + 2);
+  const exams: Exam[] = [
+    {
+      id: "exam_chem",
+      name: "Chemistry Final",
+      subjectId: "chem",
+      subjectName: "Chemistry",
+      subjectEmoji: "🧪",
+      date: examDate.toISOString().slice(0, 10),
+      syllabus: [{ id: "syl_a", title: "Acids", done: false }],
+    },
+  ];
+
+  const recs = buildRevisionRecommendations(evaluated, exams, reviewedMap, now);
+  // Imminent exam must NEVER be suppressed to low urgency!
+  assert.strictEqual(recs[0].urgency, "urgent", "Imminent exam (<= 3 days) must retain urgent status despite review");
+  assert.ok(recs[0].reason.includes("Imminent exam in 2 days"));
+  console.log("✔ Imminent exam (< 3 days) retains urgent status and cannot be suppressed by review marker");
+}
+
+// 13. Expired review marker (> 7 days) expires and does not suppress weak topic
+{
+  const topicKey = normalizeTopicKey("bio", "Ecology");
+  const reviewedMap = new Map<string, string>();
+  // Reviewed 10 days ago
+  const tenDaysAgo = new Date("2026-10-06T12:00:00Z");
+  reviewedMap.set(topicKey, tenDaysAgo.toISOString());
+
+  const assessments: AssessmentResult[] = [
+    {
+      id: "eco1",
+      subjectId: "bio",
+      subjectName: "Biology",
+      topic: "Ecology",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(tenDaysAgo.getTime() - 20000),
+    },
+    {
+      id: "eco2",
+      subjectId: "bio",
+      subjectName: "Biology",
+      topic: "Ecology",
+      score: 2,
+      totalQuestions: 5,
+      accuracy: 0.4,
+      source: "quiz",
+      createdAt: mockTimestamp(tenDaysAgo.getTime() - 10000),
+    },
+  ];
+
+  const now = new Date("2026-10-16T12:00:00Z"); // 10 days after review
+  const evaluated = classifyTopicPerformance(assessments, { reviewedMap, now });
+  assert.strictEqual(evaluated[0].isReviewedRecently, false, "Review marker > 7 days old must expire");
+
+  const recs = buildRevisionRecommendations(evaluated, [], reviewedMap);
+  assert.strictEqual(recs[0].isReviewed, false);
+  assert.strictEqual(recs[0].urgency, "high"); // Full urgency restored
+  console.log("✔ Expired review marker (> 7 days) correctly expires and restores recommendation urgency");
+}
+
 console.log("\nAll Weak Topic Detection & Smart Revision tests passed successfully! 🎉");

@@ -199,7 +199,14 @@ export default function Subjects() {
 
               {/* Progress bar */}
               <div className="banner-progress-wrap">
-                <div className="banner-progress-track">
+                <div
+                  className="banner-progress-track"
+                  role="progressbar"
+                  aria-valuenow={Math.min(100, summary.totalProgressPercent)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Overall weekly study target progress: ${summary.totalProgressPercent}%`}
+                >
                   <div
                     className={`banner-progress-fill ${summary.allAchieved ? "fill-success" : ""}`}
                     style={{ width: `${Math.min(100, summary.totalProgressPercent)}%` }}

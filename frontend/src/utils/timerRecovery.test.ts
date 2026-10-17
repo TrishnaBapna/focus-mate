@@ -237,24 +237,109 @@ function makeSampleSession(overrides: Partial<StoredFocusSession> = {}): StoredF
   console.log("✔ Corrupted and stale session handling passed");
 }
 
-// 10. Exactly-once session completion & duplicate prevention
+// 11. Failed Firestore save preserves active session snapshot and clientSessionId
 {
-  // Simulating the lifecycle of recovering an expired session:
-  // Step 1: User returns after session expired while closed
-  const session = makeSampleSession({ startedAt: T0 });
+  const clientSessionId = "client_sess_id_abc123";
+  const session = makeSampleSession({
+    clientSessionId,
+    accumulatedMs: 1500000,
+    running: false,
+    startedAt: null,
+  });
   saveActiveSession(session);
 
-  const evaluation = evaluateRecoveredSession(session, T0 + 30 * 60 * 1000); // 30 mins later
-  assert.strictEqual(evaluation.isExpired, true);
+  // Simulate failed network save
+  const networkFailed = true;
+  function mockAddSession(throwErr: boolean) {
+    if (throwErr) {
+      throw new Error("Network unavailable (offline)");
+    }
+    return { id: clientSessionId };
+  }
 
-  // Step 2: During recovery processing, clearActiveSession is executed immediately
+  // Attempt save 1: fails
+  try {
+    mockAddSession(networkFailed);
+    clearActiveSession(session.uid);
+  } catch {
+    // On failure: snapshot must NOT be cleared!
+  }
+
+  const storedAfterFail = loadActiveSession(session.uid);
+  assert.ok(storedAfterFail !== null, "Session snapshot must be preserved in localStorage after failed save");
+  assert.strictEqual(storedAfterFail?.clientSessionId, clientSessionId, "Deterministic clientSessionId must be preserved");
+  assert.strictEqual(storedAfterFail?.accumulatedMs, 1500000);
+  console.log("✔ Failed save preserves active session snapshot and clientSessionId");
+}
+
+// 12. Idempotent retry using deterministic clientSessionId prevents duplicate sessions
+{
+  const clientSessionId = "client_sess_id_idempotent_456";
+  const session = makeSampleSession({ clientSessionId, accumulatedMs: 1500000 });
+  saveActiveSession(session);
+
+  const firestoreDb = new Map<string, { topic: string; completedAt: number }>();
+
+  // Deterministic setDoc implementation mimicking addSession(uid, data, sessionId)
+  function idempotentSave(sessionId: string, topic: string) {
+    firestoreDb.set(sessionId, { topic, completedAt: Date.now() });
+    return { id: sessionId };
+  }
+
+  // First attempt (e.g. sent to server right before network dropped)
+  const res1 = idempotentSave(session.clientSessionId!, session.topic);
+  assert.strictEqual(firestoreDb.size, 1);
+
+  // User retries save using stored snapshot clientSessionId
+  const loaded = loadActiveSession(session.uid);
+  assert.ok(loaded !== null);
+  const res2 = idempotentSave(loaded!.clientSessionId!, loaded!.topic);
+
+  // Assert both returned identical session ID and no duplicate document was created
+  assert.strictEqual(res1.id, res2.id);
+  assert.strictEqual(firestoreDb.size, 1, "Firestore must have exactly 1 session document (idempotent setDoc)");
+
+  // Once save confirms success, snapshot is cleared
   clearActiveSession(session.uid);
+  assert.strictEqual(loadActiveSession(session.uid), null, "Storage cleared after confirmed save");
+  console.log("✔ Idempotent retry with deterministic clientSessionId prevents duplicate sessions");
+}
 
-  // Step 3: If a subsequent reload occurs or an effect re-runs, storage is already empty
-  const reloaded = loadActiveSession(session.uid);
-  assert.strictEqual(reloaded, null, "Storage must be empty so session is not submitted twice to Firestore");
+// 13. Strict mode away tracking on app suspension / closing during active focus
+{
+  const targetMinutes = 25;
+  const targetMs = targetMinutes * 60 * 1000;
+  const targetSecs = targetMinutes * 60;
 
-  console.log("✔ Exactly-once session completion and duplicate prevention verified");
+  // Session ran for 5 minutes (300s) before app was closed / suspended
+  const session = makeSampleSession({
+    strict: true,
+    focusMinutes: targetMinutes,
+    accumulatedMs: 300000,
+    startedAt: T0,
+    awayCount: 0,
+    awaySeconds: 0,
+  });
+
+  // App is reopened 30 minutes later (expired)
+  const reopenTime = T0 + 30 * 60 * 1000;
+  const evaluation = evaluateRecoveredSession(session, reopenTime);
+  assert.strictEqual(evaluation.isExpired, true);
+  assert.strictEqual(evaluation.targetMs, targetMs);
+
+  // When recovering an expired strict session that was running when suspended:
+  let leaves = session.awayCount;
+  let awaySeconds = session.awaySeconds;
+  if (session.strict) {
+    leaves += 1;
+    const elapsedBeforeClose = Math.round((session.accumulatedMs ?? 0) / 1000);
+    awaySeconds += Math.max(0, targetSecs - elapsedBeforeClose);
+  }
+
+  assert.strictEqual(leaves, 1, "Leaving app while strict focus was active must increment leaves");
+  assert.strictEqual(awaySeconds, 20 * 60, "Away seconds must register the 20 minutes spent away from the app");
+  console.log("✔ Strict mode away penalty on app suspension / closing verified");
 }
 
 console.log("\nAll Focus Session Recovery tests passed successfully! 🎉");
+

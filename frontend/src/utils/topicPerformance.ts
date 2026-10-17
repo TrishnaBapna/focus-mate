@@ -156,27 +156,66 @@ export function classifyTopicPerformance(
     if (!hasSufficientData) {
       status = "not_enough_data";
       statusReason = `Needs at least ${MIN_ATTEMPTS_REQUIRED} attempts and ${MIN_QUESTIONS_REQUIRED} questions for reliable classification (currently ${totalAttempts} attempt${totalAttempts === 1 ? "" : "s"}, ${totalQuestions} question${totalQuestions === 1 ? "" : "s"}).`;
-    } else if (overallAccuracy < PASSING_THRESHOLD && recentAccuracy < 0.7) {
-      status = "needs_revision";
-      statusReason = `Demonstrated low accuracy (${Math.round(overallAccuracy * 100)}% overall, ${Math.round(recentAccuracy * 100)}% recent) across ${totalAttempts} attempts. Needs targeted review.`;
     } else if (recentAccuracy < 0.5) {
+      // Recent score collapsed critically below passing
       status = "needs_revision";
       statusReason = `Latest attempt dropped significantly to ${Math.round(recentAccuracy * 100)}%. Immediate revision recommended.`;
-    } else if (overallAccuracy < MASTERY_THRESHOLD && recentAccuracy >= MASTERY_THRESHOLD) {
+    } else if (overallAccuracy < PASSING_THRESHOLD && recentAccuracy < PASSING_THRESHOLD) {
+      // Both overall and recent accuracy are below passing
+      status = "needs_revision";
+      statusReason = `Demonstrated low accuracy (${Math.round(overallAccuracy * 100)}% overall, ${Math.round(recentAccuracy * 100)}% recent) across ${totalAttempts} attempts. Needs targeted review.`;
+    } else if (overallAccuracy >= PASSING_THRESHOLD && recentAccuracy < PASSING_THRESHOLD) {
+      // Strong overall performance with declining recent performance
+      status = "needs_revision";
+      statusReason = `Recent score declined to ${Math.round(recentAccuracy * 100)}% (below ${Math.round(PASSING_THRESHOLD * 100)}% passing threshold) despite ${Math.round(overallAccuracy * 100)}% historical average. Revision recommended.`;
+    } else if (overallAccuracy < PASSING_THRESHOLD && recentAccuracy >= PASSING_THRESHOLD) {
+      // Low overall performance with improving recent performance
       status = "improving";
-      statusReason = `Strong recent progress: latest score is ${Math.round(recentAccuracy * 100)}% (up from ${Math.round(overallAccuracy * 100)}% overall).`;
-    } else {
+      statusReason = `Promising recovery: latest score is ${Math.round(recentAccuracy * 100)}% (up from ${Math.round(overallAccuracy * 100)}% overall). Keep practicing to consolidate knowledge.`;
+    } else if (overallAccuracy < MASTERY_THRESHOLD && recentAccuracy >= MASTERY_THRESHOLD) {
+      // Moderate overall performance reaching mastery on recent attempt
+      status = "improving";
+      statusReason = `Strong recent progress: latest score reached ${Math.round(recentAccuracy * 100)}% mastery (up from ${Math.round(overallAccuracy * 100)}% overall).`;
+    } else if (trend === "improving" && overallAccuracy < MASTERY_THRESHOLD && recentAccuracy >= PASSING_THRESHOLD) {
+      // Clear upward trend
+      status = "improving";
+      statusReason = `Performance is trending upward: recent score is ${Math.round(recentAccuracy * 100)}% vs ${Math.round(overallAccuracy * 100)}% average.`;
+    } else if (overallAccuracy >= PASSING_THRESHOLD && recentAccuracy >= PASSING_THRESHOLD) {
+      // Both overall and recent performance meet or exceed passing threshold
       status = "on_track";
       statusReason = `Solid performance: ${Math.round(overallAccuracy * 100)}% overall accuracy across ${totalQuestions} questions.`;
+    } else {
+      // Safe fallback: never allow below-passing performance to fall through to on_track
+      if (recentAccuracy < PASSING_THRESHOLD || overallAccuracy < PASSING_THRESHOLD) {
+        status = "needs_revision";
+        statusReason = `Performance is below target (${Math.round(overallAccuracy * 100)}% overall, ${Math.round(recentAccuracy * 100)}% recent). Needs revision.`;
+      } else {
+        status = "on_track";
+        statusReason = `Performance on track (${Math.round(overallAccuracy * 100)}% overall).`;
+      }
     }
 
     // Review tracking: check if marked reviewed recently (within last 7 days)
+    // AND ensure that any new assessment recorded AFTER the review marker invalidates the reviewed state!
     const reviewedIso = reviewedMap.get(topicKey);
     let isReviewedRecently = false;
     if (reviewedIso) {
       const reviewedTime = new Date(reviewedIso).getTime();
       const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-      if (!isNaN(reviewedTime) && now.getTime() - reviewedTime <= sevenDaysMs) {
+      const isWithinTtl = !isNaN(reviewedTime) && now.getTime() - reviewedTime <= sevenDaysMs;
+
+      // Extract the timestamp of the latest attempt
+      const latestAttemptTime = representative.createdAt?.toMillis
+        ? representative.createdAt.toMillis()
+        : representative.createdAt?.toDate
+        ? representative.createdAt.toDate().getTime()
+        : 0;
+
+      // If a new assessment was completed AFTER the reviewed timestamp,
+      // the review marker is invalidated so fresh evidence immediately impacts status & recommendations!
+      const newAssessmentSinceReview = latestAttemptTime > reviewedTime;
+
+      if (isWithinTtl && !newAssessmentSinceReview) {
         isReviewedRecently = true;
       }
     }
@@ -229,7 +268,8 @@ export function classifyTopicPerformance(
 export function buildRevisionRecommendations(
   topics: TopicPerformance[],
   exams: Exam[] = [],
-  reviewedMap: Map<string, string> = new Map()
+  reviewedMap: Map<string, string> = new Map(),
+  now: Date = new Date()
 ): RevisionRecommendation[] {
   const recommendations: RevisionRecommendation[] = [];
 
@@ -237,7 +277,7 @@ export function buildRevisionRecommendations(
   function findUpcomingExam(subjectId: string, topicName: string) {
     const lowerTopic = topicName.toLowerCase();
     for (const exam of exams) {
-      const days = daysUntil(exam.date);
+      const days = daysUntil(exam.date, now);
       if (days < 0 || days > 21) continue;
 
       const isSameSubject = exam.subjectId && exam.subjectId === subjectId;
@@ -254,7 +294,8 @@ export function buildRevisionRecommendations(
 
   for (const topic of topics) {
     const examMatch = findUpcomingExam(topic.subjectId, topic.topic);
-    const isReviewed = topic.isReviewedRecently || !!reviewedMap.get(topic.topicKey);
+    // Trust valid, unexpired, non-invalidated reviewed state from topic evaluation
+    const isReviewed = topic.isReviewedRecently;
 
     let priority = 0;
     let urgency: RevisionUrgency = "medium";
@@ -301,11 +342,22 @@ export function buildRevisionRecommendations(
       urgency = priority >= 120 ? "high" : priority >= 60 ? "medium" : "low";
     }
 
-    // Demote reviewed topics
+    // Demote reviewed topics, but NEVER suppress an imminent upcoming exam!
     if (isReviewed) {
-      priority = Math.max(1, priority - 120);
-      urgency = "low";
-      reason = `Marked reviewed recently · ${reason}`;
+      if (examMatch && examMatch.days <= 3) {
+        // Imminent exam within 3 days: review status only slightly demotes priority, but cannot suppress urgency to low!
+        priority = Math.max(90, priority - 35);
+        urgency = "urgent";
+        reason = `Imminent exam in ${examMatch.days === 0 ? "today" : examMatch.days === 1 ? "tomorrow" : `${examMatch.days} days`} · Marked reviewed recently · ${reason}`;
+      } else if (examMatch && examMatch.days <= 7) {
+        priority = Math.max(65, priority - 60);
+        urgency = priority >= 100 ? "high" : "medium";
+        reason = `Upcoming exam in ${examMatch.days} days · Marked reviewed recently · ${reason}`;
+      } else {
+        priority = Math.max(1, priority - 120);
+        urgency = "low";
+        reason = `Marked reviewed recently · ${reason}`;
+      }
     }
 
     // Determine suggested action
@@ -342,7 +394,7 @@ export function buildRevisionRecommendations(
 
   // Also surface upcoming exam syllabus items that haven't been completed yet
   for (const exam of exams) {
-    const days = daysUntil(exam.date);
+    const days = daysUntil(exam.date, now);
     if (days < 0 || days > 21) continue;
 
     for (const item of exam.syllabus) {

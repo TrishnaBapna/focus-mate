@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { SessionMode, Subject } from "../types";
+import type { FocusSession, SessionMode, Subject } from "../types";
 
 export type Phase = "setup" | "focus" | "focusDone" | "break";
 export type SaveStatus = "saved" | "short" | "error";
@@ -8,9 +8,11 @@ export interface FocusResult {
   seconds: number;
   status: SaveStatus;
   sessionId?: string;
+  clientSessionId?: string;
   strict?: boolean;
   leaves?: number;
   awaySeconds?: number;
+  savedPayload?: Omit<FocusSession, "id">;
 }
 
 export interface FocusContextValue {
@@ -60,6 +62,8 @@ export interface FocusContextValue {
   pause: () => void;
   resume: () => void;
   finishEarly: () => void;
+  retrySaveSession: () => Promise<void>;
+  isRetryingSave: boolean;
 }
 
 export const FocusContext = createContext<FocusContextValue | null>(null);

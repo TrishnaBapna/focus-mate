@@ -7,7 +7,15 @@ export default function PerformanceCard({ percent }: { percent: number }) {
     <section className="wf-card perf">
       <h3>Focus Performance</h3>
       <span className="perf-today">Today</span>
-      <svg className="perf-ring" viewBox="0 0 120 120" role="img" aria-label={`${percent}% of today's goal`}>
+      <svg
+        className="perf-ring"
+        viewBox="0 0 120 120"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${percent}% of today's focus goal`}
+      >
         <circle className="ring-bg" cx="60" cy="60" r={RADIUS} />
         <circle
           className="ring-val"

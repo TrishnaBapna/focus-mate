@@ -20,7 +20,7 @@ import {
   type RecoveredSessionState,
   type StoredFocusSession,
 } from "../utils/timerRecovery";
-import type { SessionMode } from "../types";
+import type { FocusSession, SessionMode } from "../types";
 
 const MIN_SAVE_SECONDS = 60;
 const MIN_AWAY_SECONDS = 3; // ignore quick flickers
@@ -81,16 +81,26 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
   const [result, setResult] = useState<FocusResult | null>(() => {
     if (initial.session && initial.evaluation?.isExpired && initial.session.phase === "focus") {
       const targetSecs = Math.round((initial.evaluation.targetMs ?? 0) / 1000);
+      const isStrict = initial.session.strict;
+      let leaves = initial.session.awayCount;
+      let awaySeconds = initial.session.awaySeconds;
+      if (isStrict) {
+        leaves += 1;
+        const elapsedBeforeClose = Math.round((initial.session.accumulatedMs ?? 0) / 1000);
+        awaySeconds += Math.max(0, targetSecs - elapsedBeforeClose);
+      }
       return {
         seconds: targetSecs,
-        status: targetSecs >= MIN_SAVE_SECONDS ? "saved" : "short",
-        strict: initial.session.strict,
-        leaves: initial.session.awayCount,
-        awaySeconds: initial.session.awaySeconds,
+        status: targetSecs >= MIN_SAVE_SECONDS ? "error" : "short",
+        strict: isStrict,
+        leaves,
+        awaySeconds,
+        clientSessionId: initial.session.clientSessionId,
       };
     }
     return null;
   });
+  const [isRetryingSave, setIsRetryingSave] = useState(false);
 
   // Recovery notice for the user
   const [recoveredNotice, setRecoveredNotice] = useState<string | null>(() => {
@@ -161,8 +171,6 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
       isFinishingRef.current = true;
 
       try {
-        if (user) clearActiveSession(user.uid);
-
         const seconds = Math.round(totalMs / 1000);
         const wasStrict = override ? override.strict : strict;
         const targetSubjectId = override ? override.subjectId : subjectId;
@@ -195,30 +203,70 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
               }
             : undefined);
 
+        const clientSessionId =
+          override?.clientSessionId ||
+          (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `sess_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+
+        let savedPayload: Omit<FocusSession, "id"> | undefined;
+
         if (user && activeSubject && seconds >= MIN_SAVE_SECONDS) {
+          savedPayload = {
+            subjectId: activeSubject.id,
+            subjectName: activeSubject.name,
+            subjectEmoji: activeSubject.emoji,
+            topic: targetTopic.trim(),
+            goal: targetGoal.trim(),
+            mode: targetMode,
+            durationSeconds: seconds,
+            ...(wasStrict ? { strict: true, leaves, awaySeconds } : {}),
+          };
+
+          // Retain snapshot in localStorage with clientSessionId before Firestore write
+          saveActiveSession({
+            version: 1,
+            uid: user.uid,
+            phase: "focus",
+            mode: targetMode,
+            subjectId: activeSubject.id,
+            subjectName: activeSubject.name,
+            subjectEmoji: activeSubject.emoji,
+            topic: targetTopic,
+            goal: targetGoal,
+            focusMinutes,
+            breakMinutes,
+            strict: wasStrict,
+            running: false,
+            startedAt: null,
+            accumulatedMs: totalMs,
+            savedAt: Date.now(),
+            awayCount: leaves,
+            awaySeconds,
+            clientSessionId,
+          });
+
           try {
-            const ref = await addSession(user.uid, {
-              subjectId: activeSubject.id,
-              subjectName: activeSubject.name,
-              subjectEmoji: activeSubject.emoji,
-              topic: targetTopic.trim(),
-              goal: targetGoal.trim(),
-              mode: targetMode,
-              durationSeconds: seconds,
-              ...(wasStrict ? { strict: true, leaves, awaySeconds } : {}),
-            });
+            const ref = await addSession(user.uid, savedPayload, clientSessionId);
             sessionId = ref.id;
             status = "saved";
+            // ONLY clear active session after successful Firestore save
+            clearActiveSession(user.uid);
           } catch (err) {
             console.error("Failed to save session", err);
             status = "error";
+            // Do NOT clear active session on error, allowing user to retry save
           }
+        } else if (user) {
+          clearActiveSession(user.uid);
         }
 
         setResult({
           seconds,
           status,
           sessionId,
+          clientSessionId,
+          savedPayload,
           ...(wasStrict ? { strict: true, leaves, awaySeconds } : {}),
         });
         setPhase("focusDone");
@@ -226,8 +274,30 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
         isFinishingRef.current = false;
       }
     },
-    [user, strict, subjectId, topic, goal, mode, subjects]
+    [user, strict, subjectId, topic, goal, mode, subjects, focusMinutes, breakMinutes]
   );
+
+  const retrySaveSession = useCallback(async () => {
+    if (!user || !result?.savedPayload || isRetryingSave) return;
+    setIsRetryingSave(true);
+    try {
+      const ref = await addSession(user.uid, result.savedPayload, result.clientSessionId);
+      clearActiveSession(user.uid);
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "saved",
+              sessionId: ref.id,
+            }
+          : null
+      );
+    } catch (err) {
+      console.error("Retry save failed:", err);
+    } finally {
+      setIsRetryingSave(false);
+    }
+  }, [user, result, isRetryingSave]);
 
   const timer = useTimer(
     targetMs,
@@ -291,45 +361,97 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!initial.session || !initial.evaluation?.isExpired) return;
     if (expiredHandledRef.current) return;
+    if (!user) return;
     expiredHandledRef.current = true;
 
     const { session, evaluation } = initial;
-    clearActiveSession(session.uid);
+
+    if (session.phase === "break") {
+      clearActiveSession(session.uid);
+      return;
+    }
 
     if (session.phase === "focus") {
       const seconds = Math.round((evaluation.targetMs ?? 0) / 1000);
-      if (seconds >= MIN_SAVE_SECONDS && user) {
-        const effectiveSubject =
-          subjects.find((s) => s.id === session.subjectId) ??
-          (session.subjectId
-            ? {
-                id: session.subjectId,
-                name: session.subjectName || "Subject",
-                emoji: session.subjectEmoji || "⏱️",
-              }
-            : undefined);
-
-        if (effectiveSubject) {
-          void addSession(user.uid, {
-            subjectId: effectiveSubject.id,
-            subjectName: effectiveSubject.name,
-            subjectEmoji: effectiveSubject.emoji,
-            topic: session.topic.trim(),
-            goal: session.goal.trim(),
-            mode: session.mode,
-            durationSeconds: seconds,
-            ...(session.strict
-              ? {
-                  strict: true,
-                  leaves: session.awayCount,
-                  awaySeconds: session.awaySeconds,
-                }
-              : {}),
-          }).catch((err) => {
-            console.error("Failed to save expired focus session:", err);
-          });
-        }
+      let leaves = session.awayCount;
+      let awaySeconds = session.awaySeconds;
+      if (session.strict) {
+        leaves += 1;
+        const elapsedBeforeClose = Math.round((session.accumulatedMs ?? 0) / 1000);
+        awaySeconds += Math.max(0, seconds - elapsedBeforeClose);
       }
+
+      const clientSessionId =
+        session.clientSessionId ||
+        (typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `rec_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+
+      if (seconds < MIN_SAVE_SECONDS) {
+        clearActiveSession(session.uid);
+        return;
+      }
+
+      const effectiveSubject =
+        subjects.find((s) => s.id === session.subjectId) ??
+        (session.subjectId
+          ? {
+              id: session.subjectId,
+              name: session.subjectName || "Subject",
+              emoji: session.subjectEmoji || "⏱️",
+            }
+          : undefined);
+
+      if (!effectiveSubject) {
+        return;
+      }
+
+      const payload: Omit<FocusSession, "id"> = {
+        subjectId: effectiveSubject.id,
+        subjectName: effectiveSubject.name,
+        subjectEmoji: effectiveSubject.emoji,
+        topic: session.topic.trim(),
+        goal: session.goal.trim(),
+        mode: session.mode,
+        durationSeconds: seconds,
+        ...(session.strict ? { strict: true, leaves, awaySeconds } : {}),
+      };
+
+      // Retain snapshot in localStorage with clientSessionId and updated away stats
+      saveActiveSession({
+        ...session,
+        clientSessionId,
+        awayCount: leaves,
+        awaySeconds,
+      });
+
+      addSession(user.uid, payload, clientSessionId)
+        .then((ref) => {
+          clearActiveSession(session.uid);
+          setResult({
+            seconds,
+            status: "saved",
+            sessionId: ref.id,
+            clientSessionId,
+            savedPayload: payload,
+            strict: session.strict,
+            leaves,
+            awaySeconds,
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to save expired focus session:", err);
+          // Do NOT clear active session on error, allowing retry save
+          setResult({
+            seconds,
+            status: "error",
+            clientSessionId,
+            savedPayload: payload,
+            strict: session.strict,
+            leaves,
+            awaySeconds,
+          });
+        });
     }
   }, [initial, user, subjects]);
 
@@ -672,6 +794,8 @@ export default function FocusProvider({ children }: { children: ReactNode }) {
           }
         },
         finishEarly: () => void finishFocus(timer.pause()),
+        retrySaveSession,
+        isRetryingSave,
       }}
     >
       {children}

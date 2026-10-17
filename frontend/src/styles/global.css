@@ -2986,14 +2986,16 @@ button,
 }
 
 @media (max-width: 1024px) {
-  .wf-home { display: flex; flex-direction: column; gap: 16px; }
+  .wf-home { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
   .wf-col { display: contents; }
-  .o-hero { order: 1; }
-  .o-tasks { order: 2; }
-  .o-add { order: 3; }
-  .o-pomo { order: 4; }
-  .o-two { order: 5; }
-  .o-block { order: 6; }
+  .o-hero { order: 1; min-width: 0; width: 100%; }
+  .o-tasks { order: 2; min-width: 0; width: 100%; }
+  .o-add { order: 3; min-width: 0; width: 100%; }
+  .o-pomo { order: 4; min-width: 0; width: 100%; }
+  .o-two { order: 5; min-width: 0; width: 100%; }
+  .o-goals { order: 6; min-width: 0; width: 100%; }
+  .o-topics { order: 7; min-width: 0; width: 100%; }
+  .o-block { order: 8; min-width: 0; width: 100%; }
 }
 
 @media (max-width: 768px) {

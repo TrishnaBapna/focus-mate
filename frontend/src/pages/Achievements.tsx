@@ -18,7 +18,14 @@ export default function Achievements() {
           <span className="level-badge">LEVEL {level.level}</span>
           <span className="muted">{progress.xp} XP total</span>
         </div>
-        <div className="progress big">
+        <div
+          className="progress big"
+          role="progressbar"
+          aria-valuenow={level.percent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Level ${level.level} progress: ${level.percent}% (${level.current} of ${level.needed} XP)`}
+        >
           <div className="progress-fill" style={{ width: `${level.percent}%` }} />
         </div>
         <p className="muted">
@@ -62,7 +69,14 @@ export default function Achievements() {
                 </span>
               ) : (
                 <>
-                  <div className="progress">
+                  <div
+                    className="progress"
+                    role="progressbar"
+                    aria-valuenow={a.percent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${a.title} badge progress: ${a.percent}% (${formatProgress(a)})`}
+                  >
                     <div className="progress-fill" style={{ width: `${a.percent}%` }} />
                   </div>
                   <span className="muted">{formatProgress(a)}</span>

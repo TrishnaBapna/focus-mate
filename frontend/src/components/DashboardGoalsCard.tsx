@@ -65,7 +65,14 @@ export default function DashboardGoalsCard() {
             {formatStudyTime(summary.totalActualSeconds)} / {formatTargetHours(summary.totalTargetHours)} ({summary.totalProgressPercent}%)
           </span>
         </div>
-        <div className="dash-track">
+        <div
+          className="dash-track"
+          role="progressbar"
+          aria-valuenow={Math.min(100, summary.totalProgressPercent)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`Overall weekly study goals progress: ${summary.totalProgressPercent}%`}
+        >
           <div
             className={`dash-fill ${summary.allAchieved ? "fill-success" : ""}`}
             style={{ width: `${Math.min(100, summary.totalProgressPercent)}%` }}
@@ -85,7 +92,14 @@ export default function DashboardGoalsCard() {
                   {formatStudyTime(item.actualSeconds)} / {formatTargetHours(item.targetHours)}
                 </span>
               </div>
-              <div className="dash-mini-track">
+              <div
+                className="dash-mini-track"
+                role="progressbar"
+                aria-valuenow={Math.min(100, item.progressPercent)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${item.subject.name} study goal progress: ${item.progressPercent}%`}
+              >
                 <div
                   className="dash-mini-fill"
                   style={{

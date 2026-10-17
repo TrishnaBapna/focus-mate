@@ -1,18 +1,24 @@
 import {
   addDoc,
   collection,
+  doc,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { FocusSession } from "../types";
 
 const sessionsRef = (uid: string) => collection(db, "users", uid, "sessions");
 
-export function addSession(uid: string, data: Omit<FocusSession, "id">) {
+export function addSession(uid: string, data: Omit<FocusSession, "id">, sessionId?: string) {
+  if (sessionId) {
+    const sessionDoc = doc(db, "users", uid, "sessions", sessionId);
+    return setDoc(sessionDoc, { ...data, completedAt: serverTimestamp() }, { merge: true }).then(() => ({ id: sessionId }));
+  }
   return addDoc(sessionsRef(uid), { ...data, completedAt: serverTimestamp() });
 }
 

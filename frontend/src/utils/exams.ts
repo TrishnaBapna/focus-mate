@@ -7,10 +7,10 @@ export function newId() {
 }
 
 // Whole days from today until the date ("YYYY-MM-DD"). Negative = in the past.
-export function daysUntil(key: string): number {
+export function daysUntil(key: string, now = new Date()): number {
   const [y, m, d] = key.split("-").map(Number);
   const target = new Date(y, m - 1, d);
-  const today = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   return Math.round((target.getTime() - today.getTime()) / 86400000);
 }

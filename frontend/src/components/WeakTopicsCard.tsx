@@ -32,8 +32,9 @@ export default function WeakTopicsCard() {
     return t.status === filter;
   });
 
-  // Top recommendations (limit to 4 for clean dashboard display)
-  const topRecommendations = recommendations.slice(0, 4);
+  // Recommendations expand/collapse state (top 4 by default)
+  const [isRecsExpanded, setIsRecsExpanded] = useState(false);
+  const displayedRecommendations = isRecsExpanded ? recommendations : recommendations.slice(0, 4);
 
   async function handleToggleReviewed(
     topicKey: string,
@@ -84,7 +85,7 @@ export default function WeakTopicsCard() {
         <div className="topic-card-loading">
           <p className="muted">Analyzing topic performance…</p>
         </div>
-      ) : topics.length === 0 && topRecommendations.length === 0 ? (
+      ) : topics.length === 0 && recommendations.length === 0 ? (
         <div className="topic-empty-state">
           <div className="empty-icon">🎯</div>
           <h4>No assessment data yet</h4>
@@ -107,13 +108,18 @@ export default function WeakTopicsCard() {
       ) : (
         <>
           {/* 1. Smart Revision Recommendations */}
-          {topRecommendations.length > 0 && (
+          {displayedRecommendations.length > 0 && (
             <div className="recs-section">
               <div className="section-subtitle">
                 <span>🎯 Priority Recommendations</span>
+                {recommendations.length > 4 && (
+                  <span className="muted small" style={{ marginLeft: "auto" }}>
+                    Showing {displayedRecommendations.length} of {recommendations.length}
+                  </span>
+                )}
               </div>
-              <ul className="recs-list">
-                {topRecommendations.map((rec) => {
+              <ul className="recs-list" id="recommendations-list">
+                {displayedRecommendations.map((rec) => {
                   const isBusy = togglingTopicKey === rec.topicKey;
                   return (
                     <li
@@ -185,6 +191,22 @@ export default function WeakTopicsCard() {
                   );
                 })}
               </ul>
+
+              {recommendations.length > 4 && (
+                <div style={{ textAlign: "center", marginTop: "10px" }}>
+                  <button
+                    type="button"
+                    className="btn small secondary expand-recs-btn"
+                    onClick={() => setIsRecsExpanded((prev) => !prev)}
+                    aria-expanded={isRecsExpanded}
+                    aria-controls="recommendations-list"
+                  >
+                    {isRecsExpanded
+                      ? "▲ Show top 4 recommendations"
+                      : `▼ Show all recommendations (${recommendations.length})`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -312,7 +334,14 @@ function TopicRow({
 
       <div className="topic-metrics-row">
         <div className="topic-progress-wrap">
-          <div className="topic-progress-track">
+          <div
+            className="topic-progress-track"
+            role="progressbar"
+            aria-valuenow={item.status === "not_enough_data" ? 0 : percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${item.topic} accuracy: ${item.status === "not_enough_data" ? "not enough data" : `${percent}%`}`}
+          >
             <div
               className={`topic-progress-fill ${barClass}`}
               style={{ width: `${percent}%` }}

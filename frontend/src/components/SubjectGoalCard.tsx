@@ -50,7 +50,14 @@ export default function SubjectGoalCard({ item, onEdit, onRemove }: Props) {
         </div>
 
         {/* Visual Progress Bar */}
-        <div className="goal-progress-track">
+        <div
+          className="goal-progress-track"
+          role="progressbar"
+          aria-valuenow={progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${subject.name} weekly goal progress: ${progressPercent}% (${actualTimeText} of ${targetText})`}
+        >
           <div
             className={`goal-progress-fill ${isAchieved ? "fill-success" : ""}`}
             style={{
