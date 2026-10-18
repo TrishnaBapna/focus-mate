@@ -1,11 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.askAiProxy = void 0;
+exports.askAiProxy = exports.MAX_DAILY_REQUESTS = exports.MAX_REQUESTS_PER_MINUTE = void 0;
+exports.checkDistributedRateLimit = checkDistributedRateLimit;
 const https_1 = require("firebase-functions/v2/https");
 const params_1 = require("firebase-functions/params");
-const admin = require("firebase-admin");
-admin.initializeApp();
-const db = admin.firestore();
+const app_1 = require("firebase-admin/app");
+const firestore_1 = require("firebase-admin/firestore");
+if (!(0, app_1.getApps)().length) {
+    (0, app_1.initializeApp)();
+}
+const db = (0, firestore_1.getFirestore)();
 // Define secrets stored securely in Google Cloud Secret Manager
 const geminiApiKey = (0, params_1.defineSecret)("GEMINI_API_KEY");
 const anthropicApiKey = (0, params_1.defineSecret)("ANTHROPIC_API_KEY");
@@ -23,8 +27,8 @@ const ALLOWED_ANTHROPIC_MODELS = new Set([
     "claude-sonnet-5-5",
 ]);
 // Distributed rate limiting & abuse controls
-const MAX_REQUESTS_PER_MINUTE = 15;
-const MAX_DAILY_REQUESTS = 100; // Platform daily quota per student to prevent platform cost overruns
+exports.MAX_REQUESTS_PER_MINUTE = 15;
+exports.MAX_DAILY_REQUESTS = 100; // Platform daily quota per student to prevent platform cost overruns
 /**
  * Robust detection of deployed Cloud Functions / Cloud Run runtime.
  * Guarantees App Check is enforced in production even if NODE_ENV is left unset.
@@ -39,21 +43,22 @@ function sanitizeText(text, secret) {
 /**
  * Distributed, multi-instance-safe rate limiter backed by Firestore atomic transactions.
  * Operates across all autoscaled Cloud Function instances.
+ * Fails closed for all requests if rate-limit verification fails, protecting both cloud budget and compute instances.
  */
-async function checkDistributedRateLimit(uid, isPlatformKey) {
+async function checkDistributedRateLimit(uid, isPlatformKey, firestoreDb = db) {
     const now = Date.now();
     const oneMinuteAgo = now - 60000;
     const todayKey = new Date(now).toISOString().slice(0, 10); // YYYY-MM-DD in UTC (resets at UTC midnight)
-    const userRateLimitRef = db.collection("systemRateLimits").doc(uid);
+    const userRateLimitRef = firestoreDb.collection("systemRateLimits").doc(uid);
     try {
-        return await db.runTransaction(async (t) => {
+        return await firestoreDb.runTransaction(async (t) => {
             const snap = await t.get(userRateLimitRef);
             const data = snap.data() || {};
             // 1. Minute-level sliding window (applies to all users to protect function instances against DoS)
             const recentTimestamps = Array.isArray(data.timestamps)
                 ? data.timestamps.filter((ts) => typeof ts === "number" && ts > oneMinuteAgo)
                 : [];
-            if (recentTimestamps.length >= MAX_REQUESTS_PER_MINUTE) {
+            if (recentTimestamps.length >= exports.MAX_REQUESTS_PER_MINUTE) {
                 return {
                     allowed: false,
                     reason: "Too many requests. Please wait a minute before making another request.",
@@ -61,7 +66,7 @@ async function checkDistributedRateLimit(uid, isPlatformKey) {
             }
             // 2. Platform daily quota (applies strictly to platform-funded calls to cap cloud cost)
             const dailyCount = data.dailyDate === todayKey && typeof data.dailyCount === "number" ? data.dailyCount : 0;
-            if (isPlatformKey && dailyCount >= MAX_DAILY_REQUESTS) {
+            if (isPlatformKey && dailyCount >= exports.MAX_DAILY_REQUESTS) {
                 return {
                     allowed: false,
                     reason: "Daily AI study request limit reached. You can add your own free Gemini API key in Settings for unlimited practice.",
@@ -79,15 +84,11 @@ async function checkDistributedRateLimit(uid, isPlatformKey) {
     }
     catch (err) {
         console.warn("Distributed rate limiter error:", err);
-        if (isPlatformKey) {
-            // Fail-closed for platform-funded requests to protect cloud budget against runaway spend during database blips
-            return {
-                allowed: false,
-                reason: "Rate limit verification is temporarily unavailable. Please try again shortly.",
-            };
-        }
-        // Fail-open only for student BYOK requests since users pay for their own tokens
-        return { allowed: true };
+        // Fail-closed for all requests if rate-limit verification cannot be confirmed
+        return {
+            allowed: false,
+            reason: "Rate limit verification is temporarily unavailable. Please try again shortly.",
+        };
     }
 }
 /**

@@ -11,7 +11,7 @@ export const ANTHROPIC_MODELS = [
 ];
 
 // "latest" aliases keep working when Google retires older model names
-export const DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
+export const DEFAULT_GEMINI_MODEL = "gemini-flash-lite-latest";
 
 export const LEGACY_KEY_NAMES: Record<Provider, string> = {
   anthropic: "focusmate-ai-key",
@@ -177,9 +177,18 @@ export function setProvider(p: Provider, uid: string | null = activeAiUid): void
   write(getScopedStorageKey("provider", uid), p);
 }
 
+export function hasCustomApiKeyFor(p: Provider, uid: string | null = activeAiUid): boolean {
+  if (!uid) return false;
+  return Boolean(read(getScopedStorageKey("key", uid, p)));
+}
+
 export function getApiKeyFor(p: Provider, uid: string | null = activeAiUid): string {
-  if (!uid) return "";
-  return read(getScopedStorageKey("key", uid, p));
+  const custom = uid ? read(getScopedStorageKey("key", uid, p)) : "";
+  if (custom) return custom;
+  if (p === "gemini") {
+    return (import.meta.env?.VITE_GEMINI_API_KEY as string | undefined) || "";
+  }
+  return "";
 }
 
 export function setApiKeyFor(p: Provider, key: string, uid: string | null = activeAiUid): void {
@@ -204,8 +213,12 @@ export function setModelFor(p: Provider, model: string, uid: string | null = act
 }
 
 export function getAllowDirectBrowserFallback(uid: string | null = activeAiUid): boolean {
-  if (!uid) return false;
-  return read(getScopedStorageKey("direct_fallback", uid)) === "true";
+  if (uid) {
+    const saved = read(getScopedStorageKey("direct_fallback", uid));
+    if (saved === "true") return true;
+    if (saved === "false") return false;
+  }
+  return Boolean(import.meta.env?.VITE_GEMINI_API_KEY);
 }
 
 export function setAllowDirectBrowserFallback(allowed: boolean, uid: string | null = activeAiUid): void {

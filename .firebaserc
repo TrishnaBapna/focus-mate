@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "focus-mate-a29f8"
+    "default": "focus-mate-a29f8",
+    "staging": "focusmate-staging"
   }
 }

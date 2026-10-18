@@ -27,7 +27,7 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
   const [folderId, setFolderId] = useState(note?.folderId ?? params.get("folder") ?? "");
   const [subjectId, setSubjectId] = useState(note?.subjectId ?? params.get("subject") ?? "");
   const [topic, setTopic] = useState(note?.topic ?? params.get("topic") ?? "");
-  const [strokes, setStrokes] = useState<Stroke[]>(() => parseStrokes(note?.strokesJson));
+  const [strokes, setStrokes] = useState<Stroke[]>(() => parseStrokes(note?.strokesJson ?? undefined));
   const [redo, setRedo] = useState<Stroke[]>([]);
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState(COLORS[0]);
@@ -125,8 +125,8 @@ export default function HandwrittenEditor({ note }: { note?: Note }) {
         title: title.trim(),
         content: "",
         strokesJson: json.length <= 50000 ? json : "",
-        strokesMediaId,
-        imageId,
+        strokesMediaId: strokesMediaId ?? null,
+        imageId: imageId ?? null,
         subjectId,
         subjectName: subject?.name ?? note?.subjectName ?? "",
         subjectEmoji: subject?.emoji ?? note?.subjectEmoji ?? "",

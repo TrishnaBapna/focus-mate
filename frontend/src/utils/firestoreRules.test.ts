@@ -163,6 +163,14 @@ function evaluateFirestoreRules(
           const isSameSubject =
             !context.resource?.data ||
             context.resource.data.subjectId === data?.subjectId;
+          const isSameSubjectName =
+            (context.resource?.data?.subjectName ?? "") === (data?.subjectName ?? "");
+          const isSameSubjectEmoji =
+            (context.resource?.data?.subjectEmoji ?? "") === (data?.subjectEmoji ?? "");
+          const isSameTopic =
+            (context.resource?.data?.topic ?? "") === (data?.topic ?? "");
+          const isSameGoal =
+            (context.resource?.data?.goal ?? "") === (data?.goal ?? "");
           const isSameStrict =
             Boolean(context.resource?.data?.strict) === Boolean(data?.strict);
           const isSameLeaves =
@@ -177,6 +185,10 @@ function evaluateFirestoreRules(
               isSameDuration &&
               isSameMode &&
               isSameSubject &&
+              isSameSubjectName &&
+              isSameSubjectEmoji &&
+              isSameTopic &&
+              isSameGoal &&
               isSameStrict &&
               isSameLeaves &&
               isSameAwaySeconds
@@ -662,6 +674,126 @@ console.log("Running Firestore Security Rules Automated Verification Suite...\n"
     }
   );
   assert.strictEqual(unexpectedFieldUpdate, false, "Injecting unexpected fields on update must be rejected");
+
+  const fullSessionRecord = {
+    durationSeconds: 1500,
+    mode: "pomodoro",
+    subjectId: "math",
+    topic: "Calculus",
+    goal: "Chapter 3",
+    subjectName: "Math",
+    subjectEmoji: "📐",
+  };
+
+  // Attempting to mutate topic on update fails
+  const topicMutationUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess_topic`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: fullSessionRecord },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...fullSessionRecord,
+            topic: "Altered Topic", // mutated topic
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(topicMutationUpdate, false, "Altering topic on update must be rejected");
+
+  // Attempting to remove topic on update fails
+  const topicRemovalUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess_topic`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: fullSessionRecord },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 1500,
+            mode: "pomodoro",
+            subjectId: "math",
+            // topic omitted/removed
+            goal: "Chapter 3",
+            subjectName: "Math",
+            subjectEmoji: "📐",
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(topicRemovalUpdate, false, "Removing topic on update must be rejected");
+
+  // Attempting to mutate goal on update fails
+  const goalMutationUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess_topic`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: fullSessionRecord },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...fullSessionRecord,
+            goal: "Altered Goal", // mutated goal
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(goalMutationUpdate, false, "Altering goal on update must be rejected");
+
+  // Attempting to mutate subjectName on update fails
+  const subjectNameMutationUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess_topic`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: fullSessionRecord },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...fullSessionRecord,
+            subjectName: "Fake Math", // mutated subjectName
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(subjectNameMutationUpdate, false, "Altering subjectName on update must be rejected");
+
+  // Legitimate retry where completedAt timestamp refreshes but all content & metrics match succeeds
+  const legitimateRetry = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess_topic`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: {
+        data: {
+          ...fullSessionRecord,
+          completedAt: new Date("2026-10-18T07:00:00Z"),
+        },
+      },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...fullSessionRecord,
+            completedAt: new Date("2026-10-18T07:00:05Z"), // refreshed retry timestamp
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(legitimateRetry, true, "Legitimate session retry with timestamp refresh must succeed");
 
   console.log("✔ 5. Assessment updates/deletes and session payload mutations are strictly rejected");
 }

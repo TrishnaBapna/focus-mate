@@ -12,12 +12,16 @@ import {
   initializeTestEnvironment,
   assertFails,
   assertSucceeds,
-  RulesTestEnvironment,
+  type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, getBytes, deleteObject } from "firebase/storage";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PROJECT_ID = "demo-focusmate-test";
 
@@ -151,6 +155,12 @@ export async function runEmulatorRulesTests() {
         injectedField: true,
       }),
       "Injecting unexpected fields on session update must be rejected"
+    );
+    await assertFails(
+      updateDoc(doc(aliceDb, "users", aliceUid, "sessions", "sess_1"), {
+        topic: "Altered Topic",
+      }),
+      "Altering session topic on update must be rejected"
     );
     await assertSucceeds(
       setDoc(doc(aliceDb, "users", aliceUid, "sessions", "sess_1"), {

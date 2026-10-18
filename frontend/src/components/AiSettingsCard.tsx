@@ -5,6 +5,7 @@ import { askAi } from "../services/ai";
 import {
   ANTHROPIC_MODELS,
   hasLegacyUnscopedKeys,
+  hasCustomApiKeyFor,
   migrateLegacyKeysForUser,
   PROVIDER_LABELS,
   purgeLegacyUnscopedKeys,
@@ -25,11 +26,13 @@ export default function AiSettingsCard() {
   const [message, setMessage] = useState("");
   const [hasLegacyKeys, setHasLegacyKeys] = useState(() => hasLegacyUnscopedKeys());
   const [directFallback, setDirectFallback] = useState(() => getAllowDirectBrowserFallback(uid));
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   function reset() {
     setDraft("");
     setStatus("idle");
     setMessage("");
+    setShowCustomInput(false);
   }
 
   function switchProvider(p: Provider) {
@@ -146,19 +149,63 @@ export default function AiSettingsCard() {
       )}
 
       {apiKey ? (
-        <div className="settings-row">
-          <span>🔑 Key saved in this browser (ends in …{apiKey.slice(-4)})</span>
-          <button
-            className="btn secondary small"
-            onClick={() => void test()}
-            disabled={status === "testing"}
-          >
-            {status === "testing" ? "Testing…" : "Test key"}
-          </button>
-          <button className="link-btn danger" onClick={remove}>
-            Remove
-          </button>
-        </div>
+        <>
+          <div className="settings-row">
+            <span>
+              {hasCustomApiKeyFor(provider, uid)
+                ? `🔑 Personal key active (ends in …${apiKey.slice(-4)})`
+                : `✨ Built-in Gemini is active for all students (ends in …${apiKey.slice(-4)})`}
+            </span>
+            <button
+              className="btn secondary small"
+              onClick={() => void test()}
+              disabled={status === "testing"}
+            >
+              {status === "testing" ? "Testing…" : "Test key"}
+            </button>
+            {hasCustomApiKeyFor(provider, uid) && (
+              <button className="link-btn danger" onClick={remove} title="Switch back to shared built-in key">
+                Use built-in key
+              </button>
+            )}
+          </div>
+
+          {!hasCustomApiKeyFor(provider, uid) && (
+            <div className="settings-row" style={{ marginTop: "6px" }}>
+              {!showCustomInput ? (
+                <button
+                  type="button"
+                  className="link-btn"
+                  style={{ fontSize: "0.85rem" }}
+                  onClick={() => setShowCustomInput(true)}
+                >
+                  + Use a private API key (optional for power users)
+                </button>
+              ) : (
+                <div style={{ display: "flex", gap: "8px", width: "100%", alignItems: "center" }}>
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    placeholder="Paste your private API key"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button className="btn small" onClick={() => { save(); setShowCustomInput(false); }}>
+                    Save private key
+                  </button>
+                  <button
+                    type="button"
+                    className="link-btn small"
+                    onClick={() => { setDraft(""); setShowCustomInput(false); }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <div className="settings-row">
           <input

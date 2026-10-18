@@ -43,12 +43,16 @@ service cloud.firestore {
           && request.resource.data.durationSeconds >= 0
           && request.resource.data.durationSeconds <= 86400
           && request.resource.data.mode in ['timer', 'stopwatch', 'pomodoro'];
-        // Updates only permitted for idempotent retries: all core metrics must remain identical and unexpected fields are prohibited
+        // Updates only permitted for idempotent retries: all content and metrics must remain identical, and unexpected fields are prohibited
         allow update: if isOwner(userId)
           && request.resource.data.keys().hasOnly(['durationSeconds', 'mode', 'subjectId', 'subjectName', 'subjectEmoji', 'topic', 'goal', 'strict', 'leaves', 'awaySeconds', 'completedAt'])
           && request.resource.data.durationSeconds == resource.data.durationSeconds
           && request.resource.data.mode == resource.data.mode
           && request.resource.data.subjectId == resource.data.subjectId
+          && request.resource.data.get('subjectName', '') == resource.data.get('subjectName', '')
+          && request.resource.data.get('subjectEmoji', '') == resource.data.get('subjectEmoji', '')
+          && request.resource.data.get('topic', '') == resource.data.get('topic', '')
+          && request.resource.data.get('goal', '') == resource.data.get('goal', '')
           && request.resource.data.get('strict', false) == resource.data.get('strict', false)
           && request.resource.data.get('leaves', 0) == resource.data.get('leaves', 0)
           && request.resource.data.get('awaySeconds', 0) == resource.data.get('awaySeconds', 0);

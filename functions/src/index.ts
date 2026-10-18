@@ -1,9 +1,12 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
-import * as admin from "firebase-admin";
+import { initializeApp, getApps } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
-admin.initializeApp();
-const db = admin.firestore();
+if (!getApps().length) {
+  initializeApp();
+}
+const db = getFirestore();
 
 // Define secrets stored securely in Google Cloud Secret Manager
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
@@ -35,8 +38,8 @@ export interface ProxyAiRequest {
 }
 
 // Distributed rate limiting & abuse controls
-const MAX_REQUESTS_PER_MINUTE = 15;
-const MAX_DAILY_REQUESTS = 100; // Platform daily quota per student to prevent platform cost overruns
+export const MAX_REQUESTS_PER_MINUTE = 15;
+export const MAX_DAILY_REQUESTS = 100; // Platform daily quota per student to prevent platform cost overruns
 
 /**
  * Robust detection of deployed Cloud Functions / Cloud Run runtime.
@@ -55,18 +58,20 @@ function sanitizeText(text: string, secret?: string): string {
 /**
  * Distributed, multi-instance-safe rate limiter backed by Firestore atomic transactions.
  * Operates across all autoscaled Cloud Function instances.
+ * Fails closed for all requests if rate-limit verification fails, protecting both cloud budget and compute instances.
  */
-async function checkDistributedRateLimit(
+export async function checkDistributedRateLimit(
   uid: string,
-  isPlatformKey: boolean
+  isPlatformKey: boolean,
+  firestoreDb = db
 ): Promise<{ allowed: boolean; reason?: string }> {
   const now = Date.now();
   const oneMinuteAgo = now - 60000;
   const todayKey = new Date(now).toISOString().slice(0, 10); // YYYY-MM-DD in UTC (resets at UTC midnight)
-  const userRateLimitRef = db.collection("systemRateLimits").doc(uid);
+  const userRateLimitRef = firestoreDb.collection("systemRateLimits").doc(uid);
 
   try {
-    return await db.runTransaction(async (t) => {
+    return await firestoreDb.runTransaction(async (t) => {
       const snap = await t.get(userRateLimitRef);
       const data = snap.data() || {};
 
@@ -110,15 +115,11 @@ async function checkDistributedRateLimit(
     });
   } catch (err) {
     console.warn("Distributed rate limiter error:", err);
-    if (isPlatformKey) {
-      // Fail-closed for platform-funded requests to protect cloud budget against runaway spend during database blips
-      return {
-        allowed: false,
-        reason: "Rate limit verification is temporarily unavailable. Please try again shortly.",
-      };
-    }
-    // Fail-open only for student BYOK requests since users pay for their own tokens
-    return { allowed: true };
+    // Fail-closed for all requests if rate-limit verification cannot be confirmed
+    return {
+      allowed: false,
+      reason: "Rate limit verification is temporarily unavailable. Please try again shortly.",
+    };
   }
 }
 

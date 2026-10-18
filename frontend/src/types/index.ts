@@ -53,12 +53,12 @@ export interface Note {
   folderId?: string | null;
   folderName?: string;
   type?: "typed" | "handwritten" | "voice" | "scan"; // older notes have no type = typed
-  strokesJson?: string; // pen strokes, for handwritten notes
-  strokesMediaId?: string; // pen strokes payload stored in Storage for large drawings
-  audioId?: string; // recording in the media area, for voice notes
-  audioMime?: string;
-  audioSeconds?: number;
-  imageId?: string; // photo in the media area, for scanned notes
+  strokesJson?: string | null; // pen strokes, for handwritten notes
+  strokesMediaId?: string | null; // pen strokes payload stored in Storage for large drawings
+  audioId?: string | null; // recording in the media area, for voice notes
+  audioMime?: string | null;
+  audioSeconds?: number | null;
+  imageId?: string | null; // photo in the media area, for scanned notes
   pages?: { imageId: string; thumb?: string }[];
   imageMime?: string;
   thumb?: string; // tiny preview image (data URL), for scanned notes
