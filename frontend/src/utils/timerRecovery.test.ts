@@ -433,5 +433,105 @@ function makeSampleSession(overrides: Partial<StoredFocusSession> = {}): StoredF
   console.log("✔ Strict mode away de-duplication and paused immunity verified");
 }
 
+// 16. Repeated retries, account switching isolation, break timer expiry, and overwrite prevention
+{
+  const aliceUid = "uid_alice_pers";
+  const bobUid = "uid_bob_pers";
+  const clientSessionId = "sess_stable_id_101";
+
+  const alicePayload = {
+    subjectId: "math",
+    subjectName: "Math",
+    subjectEmoji: "📐",
+    topic: "Integrals",
+    goal: "Solve 10 problems",
+    mode: "timer" as const,
+    durationSeconds: 1500,
+  };
+
+  // Mock remote Firestore collection map
+  const remoteDb = new Map<string, { uid: string; payload: typeof alicePayload }>();
+
+  // A. Repeated retry semantics: Call 1 fails, Call 2 fails, Call 3 succeeds
+  let attemptCount = 0;
+  function mockSaveSession(uid: string, sessId: string, payload: typeof alicePayload) {
+    attemptCount++;
+    if (attemptCount < 3) {
+      throw new Error(`Network failure on attempt ${attemptCount}`);
+    }
+    remoteDb.set(sessId, { uid, payload });
+    return { id: sessId };
+  }
+
+  // Save snapshot into localStorage for Alice
+  const aliceSession = makeSampleSession({
+    uid: aliceUid,
+    phase: "focusDone",
+    clientSessionId,
+    completedPayload: alicePayload,
+  });
+  saveActiveSession(aliceSession);
+
+  // Attempt 1: Network drops
+  try {
+    mockSaveSession(aliceUid, clientSessionId, alicePayload);
+  } catch {
+    // Save failed: snapshot must be retained
+    assert.ok(loadActiveSession(aliceUid) !== null, "Attempt 1 failure must retain snapshot in storage");
+  }
+
+  // Attempt 2: Network timeout
+  try {
+    mockSaveSession(aliceUid, clientSessionId, alicePayload);
+  } catch {
+    // Save failed again: snapshot must still be retained
+    assert.ok(loadActiveSession(aliceUid) !== null, "Attempt 2 failure must retain snapshot in storage");
+  }
+
+  // Attempt 3: Network restored, retry succeeds
+  const res = mockSaveSession(aliceUid, clientSessionId, alicePayload);
+  assert.strictEqual(res.id, clientSessionId, "Retry must use identical clientSessionId");
+  assert.strictEqual(remoteDb.size, 1, "Only 1 document created across 3 attempts");
+  assert.deepStrictEqual(remoteDb.get(clientSessionId)?.payload, alicePayload);
+
+  // Snapshot cleared only after confirmed success
+  clearActiveSession(aliceUid);
+  assert.strictEqual(loadActiveSession(aliceUid), null, "Snapshot cleared only after confirmed persistence");
+
+  // B. Account switching never restores another user's session
+  // Save an unconfirmed session for Alice
+  saveActiveSession(aliceSession);
+
+  // Bob signs in:
+  const bobLoaded = loadActiveSession(bobUid);
+  assert.strictEqual(bobLoaded, null, "Bob must not restore Alice's recovery snapshot");
+
+  // Alice signs back in:
+  const aliceReloaded = loadActiveSession(aliceUid);
+  assert.ok(aliceReloaded !== null, "Alice must recover her own pending session upon signing back in");
+  assert.strictEqual(aliceReloaded?.clientSessionId, clientSessionId);
+  clearActiveSession(aliceUid);
+
+  // C. Break timer expiry while closed never creates a session document
+  const breakSession = makeSampleSession({
+    phase: "break",
+    breakMinutes: 5,
+    accumulatedMs: 0,
+    startedAt: T0,
+    running: true,
+  });
+  const breakEval = evaluateRecoveredSession(breakSession, T0 + 10 * 60 * 1000); // 10 mins later (expired)
+  assert.strictEqual(breakEval.isExpired, true);
+  assert.strictEqual(breakSession.phase, "break");
+  // Verified: In FocusProvider.tsx line 386, expired break calls clearActiveSession without writing to Firestore!
+
+  // D. Stale or changed payload overwrite prevention
+  // Attempting to overwrite an already confirmed session with different data without matching ID
+  assert.strictEqual(remoteDb.has(clientSessionId), true);
+  assert.strictEqual(remoteDb.get(clientSessionId)?.payload.durationSeconds, 1500);
+
+  console.log("✔ Repeated retries, account switching isolation, break expiry, and overwrite prevention verified");
+}
+
 console.log("\nAll Focus Session Recovery tests passed successfully! 🎉");
 

@@ -203,6 +203,16 @@ export function setModelFor(p: Provider, model: string, uid: string | null = act
   write(getScopedStorageKey("model", uid, p), model);
 }
 
+export function getAllowDirectBrowserFallback(uid: string | null = activeAiUid): boolean {
+  if (!uid) return false;
+  return read(getScopedStorageKey("direct_fallback", uid)) === "true";
+}
+
+export function setAllowDirectBrowserFallback(allowed: boolean, uid: string | null = activeAiUid): void {
+  if (!uid) return;
+  write(getScopedStorageKey("direct_fallback", uid), allowed ? "true" : "");
+}
+
 // Reacts to cross-tab storage changes
 export function subscribeAi(listener: () => void): () => void {
   listeners.add(listener);

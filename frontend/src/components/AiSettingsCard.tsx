@@ -8,6 +8,8 @@ import {
   migrateLegacyKeysForUser,
   PROVIDER_LABELS,
   purgeLegacyUnscopedKeys,
+  getAllowDirectBrowserFallback,
+  setAllowDirectBrowserFallback,
   setApiKeyFor,
   setModelFor,
   setProvider,
@@ -22,6 +24,7 @@ export default function AiSettingsCard() {
   const [status, setStatus] = useState<"idle" | "testing" | "ok" | "error">("idle");
   const [message, setMessage] = useState("");
   const [hasLegacyKeys, setHasLegacyKeys] = useState(() => hasLegacyUnscopedKeys());
+  const [directFallback, setDirectFallback] = useState(() => getAllowDirectBrowserFallback(uid));
 
   function reset() {
     setDraft("");
@@ -168,6 +171,24 @@ export default function AiSettingsCard() {
           <button className="btn" onClick={save}>
             Save key
           </button>
+        </div>
+      )}
+      {apiKey && (
+        <div style={{ margin: "6px 0 12px 0" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.85rem" }}>
+            <input
+              type="checkbox"
+              checked={directFallback}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setDirectFallback(next);
+                setAllowDirectBrowserFallback(next, uid);
+              }}
+            />
+            <span style={{ color: "var(--text-muted, #666)" }}>
+              Allow direct browser connection if server proxy is unavailable
+            </span>
+          </label>
         </div>
       )}
 

@@ -1,4 +1,6 @@
-import type { Provider } from "../utils/aiSettings";
+import { getAllowDirectBrowserFallback, type Provider } from "../utils/aiSettings";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "./firebase";
 
 interface AskOptions {
   provider: Provider;
@@ -8,6 +10,33 @@ interface AskOptions {
   prompt: string;
   maxTokens: number;
   json?: boolean; // the answer should be JSON (quizzes, flashcards)
+}
+
+async function askProxy(options: AskOptions): Promise<string> {
+  const callProxy = httpsCallable<
+    {
+      provider: Provider;
+      prompt: string;
+      system: string;
+      model: string;
+      maxTokens: number;
+      json?: boolean;
+      userApiKey?: string;
+    },
+    { text: string; isPlatformKey?: boolean }
+  >(functions, "askAiProxy");
+
+  const res = await callProxy({
+    provider: options.provider,
+    prompt: options.prompt,
+    system: options.system,
+    model: options.model,
+    maxTokens: options.maxTokens,
+    json: options.json,
+    userApiKey: options.apiKey ? options.apiKey.trim() : undefined,
+  });
+
+  return res.data.text;
 }
 
 const NETWORK_ERROR = "Couldn't reach the AI service. Check your internet connection.";
@@ -132,8 +161,54 @@ async function askGemini({ apiKey, model, system, prompt, maxTokens, json }: Ask
 }
 
 // Sends one question to the chosen AI and returns the text of the answer.
-// If the service is busy, it quietly tries again a couple of times first.
+// First tries the secure server-side Cloud Function proxy; falls back to direct
+// client-side BYOK only if the proxy is unavailable and a personal key is present.
 export async function askAi(options: AskOptions): Promise<string> {
+  try {
+    return await askProxy(options);
+  } catch (proxyErr: unknown) {
+    // 1. Platform-funded requests must NEVER fall back to direct browser calls
+    if (!options.apiKey) {
+      throw proxyErr;
+    }
+
+    const errCode = (proxyErr as { code?: string })?.code || "";
+    const errorMsg = proxyErr instanceof Error ? proxyErr.message : String(proxyErr);
+
+    // 2. Authentication, App Check, quota, rate limit, and validation errors MUST throw immediately
+    // and must never silently trigger direct browser calls
+    const isSecurityOrPolicyRejection =
+      errCode.includes("unauthenticated") ||
+      errCode.includes("permission-denied") ||
+      errCode.includes("resource-exhausted") ||
+      errCode.includes("invalid-argument") ||
+      errCode.includes("failed-precondition") ||
+      errorMsg.includes("You must be signed in") ||
+      errorMsg.includes("Rate limit") ||
+      errorMsg.includes("quota") ||
+      errorMsg.includes("rejected by the provider");
+
+    if (isSecurityOrPolicyRejection) {
+      throw proxyErr;
+    }
+
+    // 3. Fallback requires both genuine proxy unavailability AND explicit user opt-in
+    const isNetworkOrProxyUnavailable =
+      errCode.includes("unavailable") ||
+      errCode.includes("not-found") ||
+      errorMsg.includes("Failed to fetch") ||
+      errorMsg.includes("network") ||
+      errorMsg.includes("unavailable");
+
+    const allowsDirectFallback = getAllowDirectBrowserFallback();
+
+    if (isNetworkOrProxyUnavailable && allowsDirectFallback) {
+      console.warn("AI Proxy unreachable; proceeding with user-authorized client-side BYOK fallback.");
+    } else {
+      throw proxyErr;
+    }
+  }
+
   for (let attempt = 0; ; attempt++) {
     try {
       return options.provider === "gemini" ? await askGemini(options) : await askClaude(options);

@@ -118,6 +118,21 @@ function evaluateFirestoreRules(
 
       // Rule: match /sessions/{sessionId}
       if (collectionName === "sessions") {
+        const allowedSessionKeys = new Set([
+          "durationSeconds",
+          "mode",
+          "subjectId",
+          "subjectName",
+          "subjectEmoji",
+          "topic",
+          "goal",
+          "strict",
+          "leaves",
+          "awaySeconds",
+          "completedAt",
+        ]);
+        const keysOnly = data ? Object.keys(data).every((k) => allowedSessionKeys.has(k)) : false;
+
         if (op === "read") {
           matchedRuleOutcomes.push(isOwner(userId));
         } else if (op === "create") {
@@ -128,6 +143,7 @@ function evaluateFirestoreRules(
             "subjectId" in data;
           const validTypes =
             hasKeys &&
+            keysOnly &&
             typeof data.durationSeconds === "number" &&
             !isNaN(data.durationSeconds) &&
             data.durationSeconds >= 0 &&
@@ -137,7 +153,36 @@ function evaluateFirestoreRules(
             typeof data.subjectId === "string";
 
           matchedRuleOutcomes.push(Boolean(isOwner(userId) && validTypes));
-        } else if (op === "update" || op === "delete") {
+        } else if (op === "update") {
+          const isSameDuration =
+            !context.resource?.data ||
+            context.resource.data.durationSeconds === data?.durationSeconds;
+          const isSameMode =
+            !context.resource?.data ||
+            context.resource.data.mode === data?.mode;
+          const isSameSubject =
+            !context.resource?.data ||
+            context.resource.data.subjectId === data?.subjectId;
+          const isSameStrict =
+            Boolean(context.resource?.data?.strict) === Boolean(data?.strict);
+          const isSameLeaves =
+            (Number(context.resource?.data?.leaves) || 0) === (Number(data?.leaves) || 0);
+          const isSameAwaySeconds =
+            (Number(context.resource?.data?.awaySeconds) || 0) === (Number(data?.awaySeconds) || 0);
+
+          matchedRuleOutcomes.push(
+            Boolean(
+              isOwner(userId) &&
+              keysOnly &&
+              isSameDuration &&
+              isSameMode &&
+              isSameSubject &&
+              isSameStrict &&
+              isSameLeaves &&
+              isSameAwaySeconds
+            )
+          );
+        } else if (op === "delete") {
           matchedRuleOutcomes.push(isOwner(userId));
         }
       }
@@ -353,6 +398,21 @@ console.log("Running Firestore Security Rules Automated Verification Suite...\n"
     false,
     "Missing subjectId must fail"
   );
+  // Unexpected extra field on session create (strict schema enforcement)
+  assert.strictEqual(
+    evaluateFirestoreRules(
+      `/users/${aliceUid}/sessions/sess2`,
+      "create",
+      req(aliceUid, {
+        durationSeconds: 1200,
+        mode: "timer",
+        subjectId: "sub1",
+        unexpectedAdminFlag: true,
+      })
+    ),
+    false,
+    "Unexpected extra field on session create must fail"
+  );
 
   // Subject Goals validation checks
   // Negative targetHours
@@ -399,7 +459,211 @@ console.log("Running Firestore Security Rules Automated Verification Suite...\n"
   );
   assert.strictEqual(deleteAttempt, false, "Assessment deletes must be rejected");
 
-  console.log("✔ 5. Assessment updates and deletes are strictly rejected (immutability guaranteed)");
+  // Session overwrite protection
+  const existingSession = {
+    durationSeconds: 1500,
+    mode: "pomodoro",
+    subjectId: "math",
+  };
+
+  // Idempotent retry with identical core properties succeeds
+  const idempotentUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess1`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 1500,
+            mode: "pomodoro",
+            subjectId: "math",
+            completedAt: new Date(),
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(idempotentUpdate, true, "Idempotent session retry must succeed");
+
+  // Overwriting with different duration fails
+  const mutatedDurationUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess1`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 600, // mutated duration!
+            mode: "pomodoro",
+            subjectId: "math",
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(mutatedDurationUpdate, false, "Altering existing session duration must be rejected");
+
+  // Overwriting with different mode fails
+  const mutatedModeUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess1`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 1500,
+            mode: "stopwatch", // mutated mode!
+            subjectId: "math",
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(mutatedModeUpdate, false, "Altering existing session mode must be rejected");
+
+  // Overwriting with different subjectId fails
+  const mutatedSubjectUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess1`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 1500,
+            mode: "pomodoro",
+            subjectId: "physics", // mutated subject!
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(mutatedSubjectUpdate, false, "Altering existing session subjectId must be rejected");
+
+  // Strict session overwrite protection
+  const existingStrictSession = {
+    durationSeconds: 3000,
+    mode: "timer",
+    subjectId: "chem",
+    strict: true,
+    leaves: 3,
+    awaySeconds: 45,
+  };
+
+  // Mutating strict mode flag (e.g., trying to disable strict penalty) fails
+  const mutatedStrictUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess2`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingStrictSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...existingStrictSession,
+            strict: false, // attempted cheat
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(mutatedStrictUpdate, false, "Altering strict mode flag must be rejected");
+
+  // Mutating leaves count (e.g. attempting to zero out leaves) fails
+  const mutatedLeavesUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess2`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingStrictSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...existingStrictSession,
+            leaves: 0, // attempted cheat
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(mutatedLeavesUpdate, false, "Altering session leaves must be rejected");
+
+  // Mutating awaySeconds fails
+  const mutatedAwayUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess2`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingStrictSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...existingStrictSession,
+            awaySeconds: 0, // attempted cheat
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(mutatedAwayUpdate, false, "Altering awaySeconds must be rejected");
+
+  // Idempotent retry preserving strict, leaves, awaySeconds succeeds
+  const idempotentStrictUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess2`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingStrictSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            ...existingStrictSession,
+            completedAt: new Date(),
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(idempotentStrictUpdate, true, "Idempotent strict session retry must succeed");
+
+  // Injecting unexpected field on session update fails
+  const unexpectedFieldUpdate = evaluateFirestoreRules(
+    `/users/${aliceUid}/sessions/sess1`,
+    "update",
+    {
+      auth: { uid: aliceUid },
+      resource: { data: existingSession },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 1500,
+            mode: "pomodoro",
+            subjectId: "math",
+            injectedHackerReward: 99999,
+          },
+        },
+      },
+    }
+  );
+  assert.strictEqual(unexpectedFieldUpdate, false, "Injecting unexpected fields on update must be rejected");
+
+  console.log("✔ 5. Assessment updates/deletes and session payload mutations are strictly rejected");
 }
 
 // -------------------------------------------------------------------------
@@ -480,8 +744,25 @@ console.log("Running Firestore Security Rules Automated Verification Suite...\n"
   assert.strictEqual(evaluateFirestoreRules(`/users/${aliceUid}/assessments/query`, "read", req(aliceUid)), true);
   assert.strictEqual(evaluateFirestoreRules(`/users/${aliceUid}/subjectGoals/query`, "read", req(aliceUid)), true);
 
-  // App updates: sessions can be deleted/updated (e.g. recalculation/cleanup)
-  assert.strictEqual(evaluateFirestoreRules(`/users/${aliceUid}/sessions/sess1`, "update", req(aliceUid)), true);
+  // App updates: sessions idempotent retry succeeds, and sessions can be deleted
+  assert.strictEqual(
+    evaluateFirestoreRules(`/users/${aliceUid}/sessions/sess1`, "update", {
+      auth: { uid: aliceUid },
+      resource: { data: { durationSeconds: 1500, mode: "pomodoro", subjectId: "math" } },
+      request: {
+        auth: { uid: aliceUid },
+        resource: {
+          data: {
+            durationSeconds: 1500,
+            mode: "pomodoro",
+            subjectId: "math",
+            completedAt: new Date(),
+          },
+        },
+      },
+    }),
+    true
+  );
   assert.strictEqual(evaluateFirestoreRules(`/users/${aliceUid}/sessions/sess1`, "delete", req(aliceUid)), true);
 
   // App updates: subject goals can be updated and deleted

@@ -10,6 +10,8 @@ import {
   LEGACY_PROVIDER_NAME,
   migrateLegacyKeysForUser,
   setActiveAiUid,
+  getAllowDirectBrowserFallback,
+  setAllowDirectBrowserFallback,
   setApiKeyFor,
   setModelFor,
   setProvider,
@@ -222,6 +224,34 @@ setActiveAiUid(null);
   assert.strictEqual(getApiKeyFor("gemini", userAUid), "");
 
   console.log("✔ Shared browser test passed: User A logout prevents User B from inheriting keys");
+}
+
+// 8. Explicit direct browser fallback preference is scoped and defaults to disabled
+{
+  const testUserUid = "uid_fallback_test_user";
+  setActiveAiUid(testUserUid);
+
+  // Defaults to false (explicit opt-in required)
+  assert.strictEqual(getAllowDirectBrowserFallback(testUserUid), false);
+  assert.strictEqual(getAllowDirectBrowserFallback(), false);
+
+  // User explicitly opts in
+  setAllowDirectBrowserFallback(true, testUserUid);
+  assert.strictEqual(getAllowDirectBrowserFallback(testUserUid), true);
+  assert.strictEqual(getAllowDirectBrowserFallback(), true);
+
+  // Other user does not inherit the setting
+  const otherUserUid = "uid_fallback_other_user";
+  assert.strictEqual(getAllowDirectBrowserFallback(otherUserUid), false);
+
+  // User explicitly opts back out
+  setAllowDirectBrowserFallback(false, testUserUid);
+  assert.strictEqual(getAllowDirectBrowserFallback(testUserUid), false);
+
+  // Signed out state returns false
+  clearAiSettingsOnLogout();
+  assert.strictEqual(getAllowDirectBrowserFallback(), false);
+  console.log("✔ Explicit direct browser fallback preference is properly user-scoped and secure");
 }
 
 console.log("\nAll AI Key Account Isolation and Security tests passed successfully! 🎉");

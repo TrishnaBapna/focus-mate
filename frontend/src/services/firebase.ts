@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,4 +23,5 @@ export const storage = getStorage(app);
 // Limit retry timeouts to 4s to prevent operations from hanging indefinitely if bucket is unreachable
 storage.maxUploadRetryTime = 4000;
 storage.maxOperationRetryTime = 4000;
+export const functions = getFunctions(app);
 

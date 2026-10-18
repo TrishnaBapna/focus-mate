@@ -38,12 +38,20 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId)
           && request.resource.data.keys().hasAll(['durationSeconds', 'mode', 'subjectId'])
+          && request.resource.data.keys().hasOnly(['durationSeconds', 'mode', 'subjectId', 'subjectName', 'subjectEmoji', 'topic', 'goal', 'strict', 'leaves', 'awaySeconds', 'completedAt'])
           && request.resource.data.durationSeconds is number
           && request.resource.data.durationSeconds >= 0
           && request.resource.data.durationSeconds <= 86400
-          && request.resource.data.mode in ['timer', 'stopwatch', 'pomodoro']
-          && request.resource.data.subjectId is string;
-        allow update: if isOwner(userId);
+          && request.resource.data.mode in ['timer', 'stopwatch', 'pomodoro'];
+        // Updates only permitted for idempotent retries: all core metrics must remain identical and unexpected fields are prohibited
+        allow update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['durationSeconds', 'mode', 'subjectId', 'subjectName', 'subjectEmoji', 'topic', 'goal', 'strict', 'leaves', 'awaySeconds', 'completedAt'])
+          && request.resource.data.durationSeconds == resource.data.durationSeconds
+          && request.resource.data.mode == resource.data.mode
+          && request.resource.data.subjectId == resource.data.subjectId
+          && request.resource.data.get('strict', false) == resource.data.get('strict', false)
+          && request.resource.data.get('leaves', 0) == resource.data.get('leaves', 0)
+          && request.resource.data.get('awaySeconds', 0) == resource.data.get('awaySeconds', 0);
         allow delete: if isOwner(userId);
       }
 
