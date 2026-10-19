@@ -2,21 +2,22 @@ import { useState } from "react";
 import { useSettings } from "../hooks/useSettings";
 import Icon from "./Icon";
 import { playDistractionBeep } from "../utils/chime";
+import { buildBlockCommand, buildUnblockCommand, normalizeDomain, resolveBlockList } from "../utils/blocklist";
 
 // Supported distracting apps and domains
-const TILES: Record<string, { emoji: string; bg: string; domain: string }> = {
-  youtube: { emoji: "▶️", bg: "#ff3b3b", domain: "youtube.com" },
-  instagram: { emoji: "📸", bg: "linear-gradient(135deg,#f9a03f,#e1306c,#833ab4)", domain: "instagram.com" },
-  tiktok: { emoji: "🎵", bg: "#1b1b1b", domain: "tiktok.com" },
-  x: { emoji: "✖️", bg: "#151515", domain: "x.com" },
-  twitter: { emoji: "🐦", bg: "#1da1f2", domain: "twitter.com" },
-  telegram: { emoji: "✈️", bg: "#36a9e1", domain: "web.telegram.org" },
-  snapchat: { emoji: "👻", bg: "#ffd93a", domain: "snapchat.com" },
-  whatsapp: { emoji: "💬", bg: "#4cd264", domain: "web.whatsapp.com" },
-  reddit: { emoji: "🤖", bg: "#ff6a33", domain: "reddit.com" },
-  facebook: { emoji: "👍", bg: "#3b6fe0", domain: "facebook.com" },
-  netflix: { emoji: "🎬", bg: "#b3121f", domain: "netflix.com" },
-  games: { emoji: "🎮", bg: "#8a5cf6", domain: "discord.com" },
+const TILES: Record<string, { emoji: string; bg: string }> = {
+  youtube: { emoji: "▶️", bg: "#ff3b3b" },
+  instagram: { emoji: "📸", bg: "linear-gradient(135deg,#f9a03f,#e1306c,#833ab4)" },
+  tiktok: { emoji: "🎵", bg: "#1b1b1b" },
+  x: { emoji: "✖️", bg: "#151515" },
+  twitter: { emoji: "🐦", bg: "#1da1f2" },
+  telegram: { emoji: "✈️", bg: "#36a9e1" },
+  snapchat: { emoji: "👻", bg: "#ffd93a" },
+  whatsapp: { emoji: "💬", bg: "#4cd264" },
+  reddit: { emoji: "🤖", bg: "#ff6a33" },
+  facebook: { emoji: "👍", bg: "#3b6fe0" },
+  netflix: { emoji: "🎬", bg: "#b3121f" },
+  games: { emoji: "🎮", bg: "#8a5cf6" },
 };
 
 const SUGGESTED = ["YouTube", "Instagram", "TikTok", "X", "Telegram", "WhatsApp", "Snapchat", "Reddit", "Netflix", "Games"];
@@ -33,7 +34,7 @@ export default function BlockListCard() {
   const [copiedUnblock, setCopiedUnblock] = useState(false);
 
   function add(name: string) {
-    const clean = name.trim();
+    const clean = (normalizeDomain(name) ?? name).trim().slice(0, 40);
     if (!clean || list.some((n) => n.toLowerCase() === clean.toLowerCase())) return;
     update({ blockList: [...list, clean] });
     setCustom("");
@@ -45,14 +46,10 @@ export default function BlockListCard() {
 
   const suggestions = SUGGESTED.filter((s) => !list.some((n) => n.toLowerCase() === s.toLowerCase()));
 
-  // Generates real macOS hosts block command based on current list
-  const domains = list.map((item) => {
-    const key = item.toLowerCase();
-    return TILES[key]?.domain || `${key}.com`;
-  });
-  const domainString = domains.flatMap((d) => [d, `www.${d}`]).join(" ");
-  const macBlockCommand = `sudo sh -c 'echo "127.0.0.1 ${domainString}" >> /etc/hosts && dscacheutil -flushcache'`;
-  const macUnblockCommand = `sudo sed -i '' '/127.0.0.1/d' /etc/hosts && dscacheutil -flushcache`;
+  // Real macOS hosts-file commands. Only safe, validated domains are ever included.
+  const { domains, skipped } = resolveBlockList(list);
+  const macBlockCommand = buildBlockCommand(domains);
+  const macUnblockCommand = buildUnblockCommand();
 
   function copyText(txt: string, isBlock: boolean) {
     void navigator.clipboard.writeText(txt);
@@ -72,7 +69,7 @@ export default function BlockListCard() {
           <h3>Distraction Block List</h3>
           <span className="shield-badge">
             <span className="shield-dot" />
-            Active Focus Shield ({list.length} Blocked)
+            {list.length} on your list
           </span>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -163,13 +160,13 @@ export default function BlockListCard() {
             <div className="phone-guide-body">
               <div className="phone-feature-badge">
                 <span className="dot-sm" style={{ background: "var(--green)" }} />
-                <span><strong>Active Phone Shield:</strong> Auto-blocks {list.slice(0, 3).join(", ") || "distractions"} without any terminal.</span>
+                <span><strong>Phone alert (Strict mode only):</strong> FocusMate can't block other apps, but it notices when you leave and warns you.</span>
               </div>
 
               <div className="phone-step-card" style={{ marginTop: "8px" }}>
-                <div className="step-title">1. Live Tab & App Guard (Automatic)</div>
+                <div className="step-title">1. Leave alert (Strict mode)</div>
                 <p className="tiny muted">
-                  If you swipe to YouTube, Instagram, or TikTok while your timer is running, FocusMate triggers an alert alarm, wilts your plant, and tracks away time.
+                  With Strict mode on, if you switch away from FocusMate during a focus session, it plays an alarm, wilts your plant and records the time you were away. It cannot stop the other app from opening.
                 </p>
                 <button
                   type="button"
@@ -186,26 +183,35 @@ export default function BlockListCard() {
               </div>
 
               <div className="phone-step-card" style={{ marginTop: "8px" }}>
-                <div className="step-title">2. 100% Unbreakable Phone Lock</div>
+                <div className="step-title">2. Real phone lock (set up on your phone)</div>
                 <p className="tiny muted">
-                  <strong>iPhone / iPad (iOS):</strong> Use <em>Guided Access</em> (Triple-click power button). It locks your phone screen inside FocusMate — you cannot open YouTube or swipe away until you finish study!
+                  <strong>iPhone / iPad (iOS):</strong> Use <em>Guided Access</em> (Triple-click power button). It keeps your phone inside one app until you turn it off with your passcode, so other apps can't be opened.
                 </p>
                 <p className="tiny muted" style={{ marginTop: "4px" }}>
-                  <strong>Android:</strong> Pull down notification shade and tap <em>Focus Mode</em> (Digital Wellbeing) to pause YouTube & social apps, or use <em>App Pinning</em>.
+                  <strong>Android:</strong> Pull down notification shade and tap <em>Focus Mode</em> (Digital Wellbeing) to pause chosen apps (set it up in Android settings), or use <em>App Pinning</em> to stay in one app.
                 </p>
               </div>
             </div>
           ) : (
             <div className="desktop-guide-body">
               <p className="small muted">
-                Want to block {list.slice(0, 3).join(", ") || "YouTube"} across all browsers and apps on your device while you study? Run this 1-line command in your Mac Terminal:
+                Want to block these websites in every browser on this Mac? Run this command in Terminal (it asks for your Mac password). It only adds lines tagged "focusmate-block", and the second command removes exactly those lines. Websites only: it can't block apps, and browsers using "Secure DNS" may ignore it.
               </p>
+              {skipped.length > 0 && (
+                <p className="tiny muted">
+                  Not included (not a website address): {skipped.join(", ")}. Add the site, for example "discord.com".
+                </p>
+              )}
+              {macBlockCommand === "" ? (
+                <p className="small muted">Add a website to your list first.</p>
+              ) : (
               <div className="code-box">
                 <code>{macBlockCommand}</code>
                 <button className="btn small" onClick={() => copyText(macBlockCommand, true)}>
                   {copiedBlock ? "Copied! ✓" : "Copy Block Command"}
                 </button>
               </div>
+              )}
               <div className="code-box unblock-box" style={{ marginTop: "6px" }}>
                 <code>{macUnblockCommand}</code>
                 <button className="btn small secondary" onClick={() => copyText(macUnblockCommand, false)}>
@@ -216,13 +222,13 @@ export default function BlockListCard() {
           )}
 
           <p className="tiny muted" style={{ marginTop: "4px" }}>
-            ⚡ Live Focus Shield: Active on this device. Whenever Focus Mode is turned on, distracting apps trigger alarms and wilt your growing plant.
+            Honest note: a web page can't block other websites or apps by itself. Strict mode alerts you when you leave; real blocking needs the Mac command above or your phone's own settings.
           </p>
         </div>
       )}
 
       <p className="muted tiny">
-        🛡️ Real Focus Shield: While your timer is running, switching tabs to YouTube or social apps will trigger an alert tone, wilt your plant, and pause your study session.
+        Your list is a reminder. In Strict mode, leaving FocusMate triggers an alert tone, wilts your plant and records your away time. Your timer keeps running.
       </p>
     </section>
   );
