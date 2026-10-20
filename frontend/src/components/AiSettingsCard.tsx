@@ -164,8 +164,8 @@ export default function AiSettingsCard() {
               {status === "testing" ? "Testing…" : "Test key"}
             </button>
             {hasCustomApiKeyFor(provider, uid) && (
-              <button className="link-btn danger" onClick={remove} title="Switch back to shared built-in key">
-                Use built-in key
+              <button className="link-btn danger" onClick={remove} title="Remove your saved key from this device">
+                Remove key
               </button>
             )}
           </div>
@@ -220,7 +220,7 @@ export default function AiSettingsCard() {
           </button>
         </div>
       )}
-      {apiKey && (
+      {apiKey && import.meta.env.VITE_AI_PROXY_ENABLED === "true" && (
         <div style={{ margin: "6px 0 12px 0" }}>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.85rem" }}>
             <input
