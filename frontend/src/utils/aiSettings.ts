@@ -184,11 +184,8 @@ export function hasCustomApiKeyFor(p: Provider, uid: string | null = activeAiUid
 
 export function getApiKeyFor(p: Provider, uid: string | null = activeAiUid): string {
   const custom = uid ? read(getScopedStorageKey("key", uid, p)) : "";
-  if (custom) return custom;
-  if (p === "gemini") {
-    return (import.meta.env?.VITE_GEMINI_API_KEY as string | undefined) || "";
-  }
-  return "";
+  // Never fall back to a build-time key: VITE_ variables are public in the shipped JavaScript.
+  return custom;
 }
 
 export function setApiKeyFor(p: Provider, key: string, uid: string | null = activeAiUid): void {
@@ -218,7 +215,7 @@ export function getAllowDirectBrowserFallback(uid: string | null = activeAiUid):
     if (saved === "true") return true;
     if (saved === "false") return false;
   }
-  return Boolean(import.meta.env?.VITE_GEMINI_API_KEY);
+  return false;
 }
 
 export function setAllowDirectBrowserFallback(allowed: boolean, uid: string | null = activeAiUid): void {

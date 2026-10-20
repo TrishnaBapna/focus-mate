@@ -82,7 +82,7 @@ export default function GlobalTab() {
           <p>
             {rank !== null ? (
               <>
-                You're <strong>#{rank}</strong> this week.
+                You're <strong>#{rank}</strong> on this week's board, among students who joined it. Ties share a place.
               </>
             ) : (
               "Working out your place…"
