@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "npm run build && firebase deploy --only hosting",
-    "test": "node src/utils/blocklist.test.ts"
+    "test": "node src/utils/blocklist.test.ts && node src/utils/aiSettings.test.ts"
   },
   "dependencies": {
     "firebase": "^12.19.0",

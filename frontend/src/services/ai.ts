@@ -160,10 +160,45 @@ async function askGemini({ apiKey, model, system, prompt, maxTokens, json }: Ask
   return text;
 }
 
+// The secure server-side proxy (a Cloud Function) needs the Firebase Blaze plan. Until it is
+// deployed and VITE_AI_PROXY_ENABLED=true is set, AI runs on a key that each person adds
+// themselves, straight from their browser. No shared key ships inside this app.
+const PROXY_ENABLED = import.meta.env.VITE_AI_PROXY_ENABLED === "true";
+
+// Calls the chosen provider directly with the key the person added, retrying if it is busy.
+async function askDirect(options: AskOptions): Promise<string> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return options.provider === "gemini" ? await askGemini(options) : await askClaude(options);
+    } catch (err) {
+      if (!(err instanceof AiBusyError)) throw err;
+
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await sleep(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+
+      const tip =
+        options.provider === "gemini"
+          ? " Try again in a minute, or switch the model in Settings (for example to gemini-flash-lite-latest)."
+          : " Try again in a moment.";
+      throw new Error(err.message + tip, { cause: err });
+    }
+  }
+}
+
 // Sends one question to the chosen AI and returns the text of the answer.
-// First tries the secure server-side Cloud Function proxy; falls back to direct
-// client-side BYOK only if the proxy is unavailable and a personal key is present.
+// With the proxy off, it uses the key the person added, directly. With the proxy on, it tries
+// the secure Cloud Function first and falls back to that key only if the proxy is unavailable
+// and the person has opted in.
 export async function askAi(options: AskOptions): Promise<string> {
+  if (!PROXY_ENABLED) {
+    if (!options.apiKey) {
+      throw new Error("Add your own API key in Settings to use the AI features.");
+    }
+    return askDirect(options);
+  }
+
   try {
     return await askProxy(options);
   } catch (proxyErr: unknown) {
@@ -209,24 +244,7 @@ export async function askAi(options: AskOptions): Promise<string> {
     }
   }
 
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return options.provider === "gemini" ? await askGemini(options) : await askClaude(options);
-    } catch (err) {
-      if (!(err instanceof AiBusyError)) throw err;
-
-      if (attempt < RETRY_DELAYS_MS.length) {
-        await sleep(RETRY_DELAYS_MS[attempt]);
-        continue;
-      }
-
-      const tip =
-        options.provider === "gemini"
-          ? " Try again in a minute, or switch the model in Settings (for example to gemini-flash-lite-latest)."
-          : " Try again in a moment.";
-      throw new Error(err.message + tip, { cause: err });
-    }
-  }
+  return askDirect(options);
 }
 
 // Pulls a JSON object out of an answer, even if it came wrapped in extra words
