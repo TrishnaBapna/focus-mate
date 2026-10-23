@@ -99,4 +99,5 @@ export interface Plan {
 }
 
 export * from "./assessment";
+export * from "./paper";
 

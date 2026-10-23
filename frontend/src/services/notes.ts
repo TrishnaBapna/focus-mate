@@ -17,8 +17,8 @@ export type NoteInput = Omit<Note, "id" | "createdAt" | "updatedAt">;
 
 const notesRef = (uid: string) => collection(db, "users", uid, "notes");
 
-function cleanPayload<T extends Record<string, any>>(obj: T): Partial<T> {
-  const clean: Record<string, any> = {};
+function cleanPayload<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (v !== undefined) {
       clean[k] = v;

@@ -243,6 +243,116 @@ export async function runEmulatorRulesTests() {
       "Alice must be able to create tasks"
     );
 
+    // 9.5. Papers: Academic validation & integrity tests
+    // Unauthenticated access rejected
+    await assertFails(
+      getDoc(doc(unauthDb, "users", aliceUid, "papers", "paper_1")),
+      "Unauthenticated user must not read papers"
+    );
+    await assertFails(
+      setDoc(doc(unauthDb, "users", aliceUid, "papers", "paper_1"), {
+        title: "Midterm Physics",
+        paperType: "practice",
+        date: "2026-10-23",
+        status: "ready_for_review",
+        summary: { totalQuestions: 5, maxMarks: 50 },
+      }),
+      "Unauthenticated user must not create papers"
+    );
+
+    // Cross-user access rejected
+    await assertFails(
+      getDoc(doc(bobDb, "users", aliceUid, "papers", "paper_1")),
+      "Bob must not read Alice's papers"
+    );
+    await assertFails(
+      setDoc(doc(bobDb, "users", aliceUid, "papers", "paper_1"), {
+        title: "Hacked Paper",
+        paperType: "exam",
+        date: "2026-10-23",
+        status: "analyzed",
+        summary: { totalQuestions: 1, maxMarks: 10 },
+      }),
+      "Bob must not write Alice's papers"
+    );
+
+    // Valid paper creation (Practice Paper)
+    await assertSucceeds(
+      setDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_practice_1"), {
+        title: "Mechanics Practice Set",
+        paperType: "practice",
+        date: "2026-10-23",
+        status: "ready_for_review",
+        summary: { totalQuestions: 8, maxMarks: 40 },
+      }),
+      "Alice must be able to create valid practice paper"
+    );
+
+    // Valid paper creation (Real Exam Paper)
+    await assertSucceeds(
+      setDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_exam_1"), {
+        title: "Calculus Final Exam",
+        paperType: "exam",
+        date: "2026-10-23",
+        status: "analyzed",
+        summary: { totalQuestions: 10, maxMarks: 100 },
+      }),
+      "Alice must be able to create valid real exam paper"
+    );
+
+    // Invalid paperType rejected (e.g. "homework")
+    await assertFails(
+      setDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_invalid_type"), {
+        title: "Homework Assignment",
+        paperType: "homework",
+        date: "2026-10-23",
+        status: "ready_for_review",
+        summary: { totalQuestions: 5, maxMarks: 25 },
+      }),
+      "Invalid paperType must be rejected"
+    );
+
+    // Invalid status rejected
+    await assertFails(
+      setDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_invalid_status"), {
+        title: "Linear Algebra",
+        paperType: "practice",
+        date: "2026-10-23",
+        status: "unknown_status",
+        summary: { totalQuestions: 5, maxMarks: 25 },
+      }),
+      "Invalid status must be rejected"
+    );
+
+    // Invalid summary (negative marks) rejected
+    await assertFails(
+      setDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_negative_marks"), {
+        title: "Chemistry Lab",
+        paperType: "practice",
+        date: "2026-10-23",
+        status: "ready_for_review",
+        summary: { totalQuestions: 5, maxMarks: -10 },
+      }),
+      "Negative maxMarks must be rejected"
+    );
+
+    // Missing required field (missing summary) rejected
+    await assertFails(
+      setDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_missing_fields"), {
+        title: "Incomplete Paper",
+        paperType: "practice",
+        date: "2026-10-23",
+        status: "draft",
+      }),
+      "Paper missing required summary must be rejected"
+    );
+
+    // Deletion permitted for owner
+    await assertSucceeds(
+      deleteDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_practice_1")),
+      "Alice must be able to delete her own paper"
+    );
+
     console.log("--- Running Storage Rules Verification ---");
 
     const smallImage = new Uint8Array([0x89, 0x50, 0x4e, 0x47]); // dummy PNG

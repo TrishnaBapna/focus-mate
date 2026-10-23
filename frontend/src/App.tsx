@@ -13,6 +13,8 @@ import Friends from "./pages/Friends";
 import Login from "./pages/Login";
 import NoteEditor from "./pages/NoteEditor";
 import Notes from "./pages/Notes";
+import Papers from "./pages/Papers";
+import PaperWorkflow from "./pages/PaperWorkflow";
 import Planner from "./pages/Planner";
 import Settings from "./pages/Settings";
 import Study from "./pages/Study";
@@ -38,6 +40,9 @@ export default function App() {
           <Route path="/subjects" element={<Subjects />} />
           <Route path="/planner" element={<Planner />} />
           <Route path="/exams" element={<Exams />} />
+          <Route path="/papers" element={<Papers />} />
+          <Route path="/papers/new" element={<PaperWorkflow />} />
+          <Route path="/papers/:id" element={<PaperWorkflow />} />
           <Route path="/focus" element={<Focus />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/notes/:id" element={<NoteEditor />} />

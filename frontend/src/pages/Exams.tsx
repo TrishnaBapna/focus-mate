@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useExams } from "../hooks/useExams";
 import { useSubjects } from "../hooks/useSubjects";
@@ -64,7 +65,27 @@ export default function Exams() {
 
   return (
     <>
-      <h1 className="page-title">Exams 🎓</h1>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <h1 className="page-title" style={{ margin: 0 }}>
+          Exams 🎓
+        </h1>
+        <Link
+          to="/papers"
+          className="btn secondary"
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          📄 Past & Practice Papers
+        </Link>
+      </div>
 
       <form className="card exam-form" onSubmit={handleAdd}>
         <input

@@ -70,13 +70,33 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
-      // 4. Other subcollections (notes, folders, subjects, tasks, exams, decks, cards, plans, reviewedTopics, media, settings):
-      // Single-segment wildcard fallback that STRICTLY EXCLUDES assessments, sessions, and subjectGoals.
+      // 4. Papers: Validated practice and exam papers with academic integrity checks
+      match /papers/{paperId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['title', 'paperType', 'date', 'status', 'summary'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.paperType in ['practice', 'exam']
+          && request.resource.data.status in ['draft', 'extracting', 'ready_for_review', 'analyzed']
+          && request.resource.data.date is string
+          && request.resource.data.date.size() == 10
+          && request.resource.data.summary is map
+          && request.resource.data.summary.keys().hasAll(['totalQuestions', 'maxMarks'])
+          && request.resource.data.summary.totalQuestions is number
+          && request.resource.data.summary.totalQuestions >= 0
+          && request.resource.data.summary.maxMarks is number
+          && request.resource.data.summary.maxMarks >= 0;
+      }
+
+      // 5. Other subcollections (notes, folders, subjects, tasks, exams, decks, cards, plans, reviewedTopics, media, settings):
+      // Single-segment wildcard fallback that STRICTLY EXCLUDES assessments, sessions, subjectGoals, and papers.
       // This prevents Firestore's logical OR permission model from bypassing the strict validation & immutability rules above.
       match /{collectionName}/{docId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId)
-          && !(collectionName in ['assessments', 'sessions', 'subjectGoals']);
+          && !(collectionName in ['assessments', 'sessions', 'subjectGoals', 'papers']);
       }
     }
 
