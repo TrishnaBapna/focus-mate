@@ -17,6 +17,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/planner", icon: "calendar", label: "Plan" },
   { to: "/study", icon: "cards", label: "Study" },
   { to: "/exams", icon: "cap", label: "Exams" },
+  { to: "/papers", icon: "paper", label: "Paper Analysis" },
   { to: "/subjects", icon: "book", label: "Subjects" },
   { to: "/achievements", icon: "trophy", label: "Awards" },
   { to: "/analytics", icon: "chart", label: "Stats" },

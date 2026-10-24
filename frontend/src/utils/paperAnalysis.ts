@@ -31,10 +31,11 @@ interface AiEvaluationResponse {
 
 interface AiActionPlanResponse {
   actionPlan?: Array<{
-    priority?: "high" | "medium" | "low";
+    priority?: string;
     topic?: string;
+    relatedQuestion?: string;
     recommendation?: string;
-    actionType?: "flashcards" | "revision" | "practice_quiz" | "read_notes";
+    actionType?: string;
   }>;
 }
 
@@ -309,28 +310,32 @@ export async function generateActionPlanFromMistakes(
         id: `plan_${Date.now()}_1`,
         priority: "low",
         topic: subjectName ?? "General",
-        recommendation: "Excellent performance across all questions. Consolidate your knowledge with spaced repetition flashcards.",
+        recommendation:
+          "[General Recommendation] Excellent performance across all questions. Consolidate your knowledge with spaced repetition flashcards.",
         actionType: "flashcards",
         completed: false,
       },
     ];
   }
 
+  const validQuestionNumbers = new Set(weakQuestions.map((q) => String(q.questionNumber).trim().toLowerCase()));
+
   const payload = weakQuestions.map((q) => ({
     questionNumber: q.questionNumber,
     topic: q.topic || "General",
     maxMarks: q.maxMarks,
     marksScored: q.teacherAwardedMarks ?? q.studentEnteredMarks ?? q.aiEstimatedMarks ?? 0,
-    mistakes: q.mistakePoints,
-    tag: q.mistakeTag,
+    mistakes: q.mistakePoints && q.mistakePoints.length > 0 ? q.mistakePoints : ["Review answer accuracy."],
+    tag: q.mistakeTag ?? "conceptual",
   }));
 
   const system =
-    "You are an academic learning strategist. Formulate a targeted, prioritized study revision plan based only on the specific mistakes made by the student.";
+    "You are an academic learning strategist. Formulate a targeted, prioritized study revision plan strictly grounded in the specific questions where marks were lost. " +
+    "Every recommendation MUST cite the actual question number from the input (e.g. '[Q2 - Calculation mistake] Review...') or be labeled '[Synthesis]' if combining recurring mistakes. Never invent question numbers that are not in the input.";
 
-  const prompt = `Based on the following mistakes and mark losses in "${paperTitle}" (${subjectName ?? "Subject"}), generate 3 to 5 actionable study items.
+  const prompt = `Based strictly on the following observed mistakes and mark losses in "${paperTitle}" (${subjectName ?? "Subject"}), generate 2 to 5 actionable study items.
 
-Mistake Summary:
+Observed Question Mistakes:
 ${JSON.stringify(payload, null, 2)}
 
 Reply ONLY with valid JSON in this shape:
@@ -339,13 +344,17 @@ Reply ONLY with valid JSON in this shape:
     {
       "priority": "high",
       "topic": "Electromagnetism",
-      "recommendation": "Review Faraday's law sign conventions and solve 3 practice numericals.",
+      "relatedQuestion": "2",
+      "recommendation": "[Q2 - Calculation mistake] Review Faraday's law sign conventions and re-solve Question 2.",
       "actionType": "revision"
     }
   ]
 }
 allowed actionTypes: "flashcards", "revision", "practice_quiz", "read_notes"
 allowed priorities: "high", "medium", "low"`;
+
+  const allowedPriorities = new Set(["high", "medium", "low"]);
+  const allowedActions = new Set(["flashcards", "revision", "practice_quiz", "read_notes"]);
 
   try {
     const aiOpts = getAiOptions(uid, 2000);
@@ -361,25 +370,52 @@ allowed priorities: "high", "medium", "low"`;
 
     if (items.length === 0) throw new Error("Empty action plan");
 
-    return items.map((item, idx) => ({
-      id: `plan_${Date.now()}_${idx + 1}`,
-      priority: item.priority ?? "medium",
-      topic: item.topic ?? (subjectName || "Review"),
-      recommendation: item.recommendation ?? "Review missed concepts.",
-      actionType: item.actionType ?? "revision",
-      completed: false,
-    }));
+    return items
+      .filter((item) => item && typeof item.recommendation === "string" && item.recommendation.trim().length > 0)
+      .map((item, idx) => {
+        const rawPriority = String(item.priority || "").toLowerCase();
+        const priority = (allowedPriorities.has(rawPriority) ? rawPriority : "medium") as "high" | "medium" | "low";
+
+        const rawAction = String(item.actionType || "").toLowerCase();
+        const actionType = (allowedActions.has(rawAction) ? rawAction : "revision") as
+          | "flashcards"
+          | "revision"
+          | "practice_quiz"
+          | "read_notes";
+
+        let recText = item.recommendation!.trim();
+        const relatedQ = item.relatedQuestion ? String(item.relatedQuestion).trim() : "";
+
+        // Verify if the cited question is genuine
+        if (relatedQ && validQuestionNumbers.has(relatedQ.toLowerCase())) {
+          if (!recText.toLowerCase().includes(`q${relatedQ.toLowerCase()}`) && !recText.toLowerCase().includes(`question ${relatedQ.toLowerCase()}`)) {
+            recText = `[Q${relatedQ}] ${recText}`;
+          }
+        } else if (!recText.startsWith("[") && weakQuestions[idx]) {
+          recText = `[Q${weakQuestions[idx].questionNumber}] ${recText}`;
+        }
+
+        return {
+          id: `plan_${Date.now()}_${idx + 1}`,
+          priority,
+          topic: item.topic?.trim() || (subjectName || "Review"),
+          recommendation: recText,
+          actionType,
+          completed: false,
+        };
+      });
   } catch (err) {
-    console.warn("Failed to generate AI action plan, using heuristic items:", err);
-    return weakQuestions.slice(0, 4).map((q, idx) => ({
-      id: `plan_${Date.now()}_${idx + 1}`,
-      priority: idx === 0 ? "high" : "medium",
-      topic: q.topic || subjectName || `Question ${q.questionNumber}`,
-      recommendation: `Review errors on Question ${q.questionNumber}: ${
-        q.mistakePoints?.[0] || "check conceptual foundation and practice similar problems."
-      }`,
-      actionType: "flashcards",
-      completed: false,
-    }));
+    console.warn("Failed to generate AI action plan, using grounded heuristic items:", err);
+    return weakQuestions.slice(0, 4).map((q, idx) => {
+      const mistake = q.mistakePoints?.[0] || (q.mistakeTag ? `${q.mistakeTag} review` : "Review missed concept");
+      return {
+        id: `plan_${Date.now()}_${idx + 1}`,
+        priority: idx === 0 ? "high" : "medium",
+        topic: q.topic || subjectName || `Question ${q.questionNumber}`,
+        recommendation: `[Q${q.questionNumber}] Review errors: ${mistake}. Re-solve to consolidate understanding.`,
+        actionType: idx % 2 === 0 ? "revision" : "flashcards",
+        completed: false,
+      };
+    });
   }
 }

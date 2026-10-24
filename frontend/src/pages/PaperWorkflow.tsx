@@ -13,6 +13,12 @@ import {
   generateActionPlanFromMistakes,
   parseQuestionsFallback,
 } from "../utils/paperAnalysis";
+import { getProvider, PROVIDER_LABELS } from "../utils/aiSettings";
+import {
+  computePaperSummary,
+  validateAllPaperMarks,
+  validateQuestionMarks,
+} from "../utils/paperScores";
 import type {
   PaperActionItem,
   PaperSourceType,
@@ -44,6 +50,12 @@ export default function PaperWorkflow() {
   const [sourceType, setSourceType] = useState<PaperSourceType>("text");
   const [rawText, setRawText] = useState("");
   const [consentGiven, setConsentGiven] = useState(false);
+  const [evalConsentGiven, setEvalConsentGiven] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState("");
+
+  const activeProvider = getProvider(user?.uid ?? null);
+  const activeProviderLabel = PROVIDER_LABELS[activeProvider] || "Configured AI Provider";
 
   // Extracted and evaluated questions
   const [questions, setQuestions] = useState<QuestionAnalysis[]>([]);
@@ -179,17 +191,8 @@ export default function PaperWorkflow() {
       const qs = extracted.length > 0 ? extracted : parseQuestionsFallback(rawText);
       setQuestions(qs);
 
-      const maxMarks = qs.reduce((sum, q) => sum + (q.maxMarks || 0), 0);
-
       // Save initial draft / ready_for_review paper to Firestore
-      const initialSummary = {
-        totalQuestions: qs.length,
-        maxMarks,
-        totalTeacherMarks: null,
-        totalStudentMarks: null,
-        totalAiEstimatedMarks: null,
-        percentage: null,
-      };
+      const initialSummary = computePaperSummary(qs, paperType);
 
       if (paperId) {
         await updatePaper(user.uid, paperId, {
@@ -266,9 +269,55 @@ export default function PaperWorkflow() {
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   }
 
+  // Step 2: Save Progress without running AI evaluation
+  async function handleSaveProgress() {
+    if (!user || !paperId) return;
+
+    const validationErrors = validateAllPaperMarks(questions, paperType);
+    if (validationErrors.length > 0) {
+      setSaveError(validationErrors.map((e) => e.error).filter(Boolean).join(" "));
+      setSaveStatus("error");
+      return;
+    }
+
+    setSaveStatus("saving");
+    setSaveError("");
+
+    try {
+      const summary = computePaperSummary(questions, paperType);
+      await updatePaper(user.uid, paperId, {
+        title: title.trim(),
+        questions,
+        summary,
+        status: "ready_for_review",
+      });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err: unknown) {
+      console.error("Save progress error:", err);
+      const msg = err instanceof Error ? err.message : "Failed to save progress. Please try again.";
+      setSaveError(msg);
+      setSaveStatus("error");
+    }
+  }
+
   // Step 2 -> Step 3: Run AI Evaluation
   async function handleRunEvaluation() {
     if (!user || !paperId) return;
+
+    const validationErrors = validateAllPaperMarks(questions, paperType);
+    if (validationErrors.length > 0) {
+      alert(
+        "Please resolve mark validation errors before running evaluation:\n" +
+          validationErrors.map((e) => e.error).filter(Boolean).join("\n")
+      );
+      return;
+    }
+
+    if (!evalConsentGiven) {
+      alert(`Please confirm AI processing consent for ${activeProviderLabel} before continuing.`);
+      return;
+    }
 
     setLoading(true);
     setStatusMessage("Running AI analysis & formative assessment…");
@@ -282,38 +331,7 @@ export default function PaperWorkflow() {
       );
       setQuestions(evaluated);
 
-      // Compute summaries
-      const totalMax = evaluated.reduce((sum, q) => sum + (q.maxMarks || 0), 0);
-      const teacherTotal =
-        paperType === "exam"
-          ? evaluated.reduce(
-              (sum, q) => sum + (typeof q.teacherAwardedMarks === "number" ? q.teacherAwardedMarks : 0),
-              0
-            )
-          : null;
-      const studentTotal =
-        paperType === "practice"
-          ? evaluated.reduce(
-              (sum, q) => sum + (typeof q.studentEnteredMarks === "number" ? q.studentEnteredMarks : 0),
-              0
-            )
-          : null;
-      const aiTotal = evaluated.reduce(
-        (sum, q) => sum + (typeof q.aiEstimatedMarks === "number" ? q.aiEstimatedMarks : 0),
-        0
-      );
-
-      const effectiveScore = teacherTotal ?? studentTotal ?? aiTotal;
-      const percentage = totalMax > 0 ? Math.round((effectiveScore / totalMax) * 100) : null;
-
-      const summary = {
-        totalQuestions: evaluated.length,
-        maxMarks: totalMax,
-        totalTeacherMarks: teacherTotal,
-        totalStudentMarks: studentTotal,
-        totalAiEstimatedMarks: aiTotal,
-        percentage,
-      };
+      const summary = computePaperSummary(evaluated, paperType);
 
       await updatePaper(user.uid, paperId, {
         questions: evaluated,
@@ -610,10 +628,10 @@ export default function PaperWorkflow() {
               />
               <label htmlFor="aiConsent" style={{ fontSize: 13, lineHeight: 1.4, cursor: "pointer" }}>
                 <strong>Academic Accuracy & Privacy Confirmation:</strong> I understand that document
-                content and extracted answers will be sent to the configured AI provider (Gemini or
-                Claude) for extraction, rubric evaluation, and mistake categorization. AI-generated
-                estimates are for formative guidance only and will never overwrite official
-                teacher-awarded marks.
+                content and extracted answers will be sent to the configured AI provider (
+                {activeProviderLabel}) for extraction, rubric evaluation, and mistake categorization.
+                AI-generated estimates are for formative guidance only and will never overwrite
+                official teacher-awarded marks.
               </label>
             </div>
 
@@ -648,9 +666,23 @@ export default function PaperWorkflow() {
                   : " Enter your self-awarded practice marks (optional)."}
               </p>
             </div>
-            <button className="btn secondary small" onClick={addEmptyQuestion}>
-              + Add Question
-            </button>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                className="btn secondary small"
+                onClick={handleSaveProgress}
+                disabled={loading || saveStatus === "saving"}
+              >
+                {saveStatus === "saving"
+                  ? "Saving…"
+                  : saveStatus === "saved"
+                  ? "✓ Saved!"
+                  : "💾 Save Progress"}
+              </button>
+              <button className="btn secondary small" onClick={addEmptyQuestion}>
+                + Add Question
+              </button>
+            </div>
           </div>
 
           {questions.some((q) => q.uncertainMatch) && (
@@ -781,7 +813,16 @@ export default function PaperWorkflow() {
                           min={0}
                           max={q.maxMarks}
                           step={0.5}
-                          style={{ width: "100%", padding: "6px 8px", borderRadius: 6 }}
+                          style={{
+                            width: "100%",
+                            padding: "6px 8px",
+                            borderRadius: 6,
+                            borderColor:
+                              typeof q.teacherAwardedMarks === "number" &&
+                              (q.teacherAwardedMarks < 0 || q.teacherAwardedMarks > q.maxMarks)
+                                ? "#dc2626"
+                                : undefined,
+                          }}
                           placeholder="Teacher marks"
                           value={q.teacherAwardedMarks ?? ""}
                           onChange={(e) =>
@@ -802,7 +843,16 @@ export default function PaperWorkflow() {
                           min={0}
                           max={q.maxMarks}
                           step={0.5}
-                          style={{ width: "100%", padding: "6px 8px", borderRadius: 6 }}
+                          style={{
+                            width: "100%",
+                            padding: "6px 8px",
+                            borderRadius: 6,
+                            borderColor:
+                              typeof q.studentEnteredMarks === "number" &&
+                              (q.studentEnteredMarks < 0 || q.studentEnteredMarks > q.maxMarks)
+                                ? "#dc2626"
+                                : undefined,
+                          }}
                           placeholder="Self marks"
                           value={q.studentEnteredMarks ?? ""}
                           onChange={(e) =>
@@ -833,18 +883,106 @@ export default function PaperWorkflow() {
                       </datalist>
                     </div>
                   </div>
+
+                  {(() => {
+                    const validation = validateQuestionMarks(q, paperType);
+                    if (!validation.isValid) {
+                      return (
+                        <div
+                          style={{
+                            color: "#dc2626",
+                            fontSize: 12,
+                            marginTop: 6,
+                            fontWeight: 600,
+                          }}
+                        >
+                          ⚠️ {validation.error}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             ))}
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          {saveError && (
+            <div
+              style={{
+                color: "#dc2626",
+                background: "rgba(220, 38, 38, 0.1)",
+                border: "1px solid rgba(220, 38, 38, 0.25)",
+                padding: "8px 12px",
+                borderRadius: 8,
+                fontSize: 13,
+                marginBottom: 16,
+              }}
+            >
+              ⚠️ {saveError}
+            </div>
+          )}
+
+          {/* AI Evaluation Consent Disclosure */}
+          <div
+            style={{
+              background: "rgba(255, 138, 76, 0.08)",
+              border: "1px solid rgba(255, 138, 76, 0.3)",
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 16,
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-start",
+            }}
+          >
+            <input
+              type="checkbox"
+              id="evalConsent"
+              checked={evalConsentGiven}
+              onChange={(e) => setEvalConsentGiven(e.target.checked)}
+              style={{ marginTop: 2, cursor: "pointer" }}
+            />
+            <label htmlFor="evalConsent" style={{ fontSize: 13, lineHeight: 1.4, cursor: "pointer" }}>
+              <strong>AI Evaluation Confirmation:</strong> Send question text and student answers to{" "}
+              <strong>{activeProviderLabel}</strong> for formative rubric feedback and mistake analysis.
+              Teacher marks remain separate and protected.
+            </label>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+            }}
+          >
             <button className="btn secondary" onClick={() => setStep("setup")}>
               ← Back to Setup
             </button>
-            <button className="btn" onClick={handleRunEvaluation} disabled={loading || questions.length === 0}>
-              Run AI Evaluation & Feedback →
-            </button>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                className="btn secondary"
+                onClick={handleSaveProgress}
+                disabled={loading || saveStatus === "saving"}
+              >
+                {saveStatus === "saving"
+                  ? "Saving Progress…"
+                  : saveStatus === "saved"
+                  ? "✓ Progress Saved!"
+                  : "💾 Save Progress"}
+              </button>
+              <button
+                className="btn"
+                onClick={handleRunEvaluation}
+                disabled={loading || questions.length === 0 || !evalConsentGiven}
+              >
+                Run AI Evaluation & Feedback →
+              </button>
+            </div>
           </div>
         </div>
       )}

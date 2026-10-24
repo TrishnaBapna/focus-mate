@@ -353,6 +353,31 @@ export async function runEmulatorRulesTests() {
       "Alice must be able to delete her own paper"
     );
 
+    // Valid update by owner permitted
+    await assertSucceeds(
+      updateDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_exam_1"), {
+        title: "Calculus Final Exam - Updated",
+        status: "ready_for_review",
+      }),
+      "Alice must be able to update title and status on her paper"
+    );
+
+    // Attempting to mutate paperType from 'exam' to 'practice' rejected
+    await assertFails(
+      updateDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_exam_1"), {
+        paperType: "practice",
+      }),
+      "Mutating paperType must be rejected by security rules"
+    );
+
+    // Attempting to tamper with createdAt rejected
+    await assertFails(
+      updateDoc(doc(aliceDb, "users", aliceUid, "papers", "paper_exam_1"), {
+        createdAt: "2020-01-01T00:00:00Z",
+      }),
+      "Tampering with createdAt must be rejected by security rules"
+    );
+
     console.log("--- Running Storage Rules Verification ---");
 
     const smallImage = new Uint8Array([0x89, 0x50, 0x4e, 0x47]); // dummy PNG

@@ -73,12 +73,29 @@ service cloud.firestore {
       // 4. Papers: Validated practice and exam papers with academic integrity checks
       match /papers/{paperId} {
         allow read, delete: if isOwner(userId);
-        allow create, update: if isOwner(userId)
+        allow create: if isOwner(userId)
           && request.resource.data.keys().hasAll(['title', 'paperType', 'date', 'status', 'summary'])
           && request.resource.data.title is string
           && request.resource.data.title.size() > 0
           && request.resource.data.title.size() <= 200
           && request.resource.data.paperType in ['practice', 'exam']
+          && request.resource.data.status in ['draft', 'extracting', 'ready_for_review', 'analyzed']
+          && request.resource.data.date is string
+          && request.resource.data.date.size() == 10
+          && request.resource.data.summary is map
+          && request.resource.data.summary.keys().hasAll(['totalQuestions', 'maxMarks'])
+          && request.resource.data.summary.totalQuestions is number
+          && request.resource.data.summary.totalQuestions >= 0
+          && request.resource.data.summary.maxMarks is number
+          && request.resource.data.summary.maxMarks >= 0;
+
+        allow update: if isOwner(userId)
+          && request.resource.data.keys().hasAll(['title', 'paperType', 'date', 'status', 'summary'])
+          && request.resource.data.paperType == resource.data.paperType
+          && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 200
           && request.resource.data.status in ['draft', 'extracting', 'ready_for_review', 'analyzed']
           && request.resource.data.date is string
           && request.resource.data.date.size() == 10

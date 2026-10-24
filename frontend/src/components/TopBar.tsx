@@ -13,6 +13,7 @@ const TITLES: Record<string, string> = {
   "/planner": "Plan",
   "/study": "Study",
   "/exams": "Exams",
+  "/papers": "Paper Analysis",
   "/subjects": "Subjects",
   "/achievements": "Awards",
   "/analytics": "Stats",

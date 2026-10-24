@@ -46,13 +46,19 @@ export interface QuestionAnalysis {
   needsManualReview?: boolean;
 }
 
+export type PaperScoreType = "teacher" | "student" | "ai" | "none";
+
 export interface PaperSummary {
   totalQuestions: number;
   maxMarks: number;
+  gradedQuestionsCount?: number;
+  isGradingComplete?: boolean;
+  gradedMaxMarks?: number | null;
   totalTeacherMarks?: number | null;
   totalStudentMarks?: number | null;
   totalAiEstimatedMarks?: number | null;
   percentage?: number | null;
+  scoreType?: PaperScoreType;
 }
 
 export interface PaperActionItem {

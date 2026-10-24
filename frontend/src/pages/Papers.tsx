@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { usePapers } from "../hooks/usePapers";
 import { deletePaper } from "../services/papers";
 import type { Paper, PaperType } from "../types/paper";
+import { formatPaperScoreDisplay } from "../utils/paperScores";
 
 export default function Papers() {
   const { user } = useAuth();
@@ -18,17 +19,36 @@ export default function Papers() {
   });
 
   const totalPapers = papers.length;
-  const practiceCount = papers.filter((p) => p.paperType === "practice").length;
-  const examCount = papers.filter((p) => p.paperType === "exam").length;
+  const practicePapers = papers.filter((p) => p.paperType === "practice");
+  const examPapers = papers.filter((p) => p.paperType === "exam");
+  const practiceCount = practicePapers.length;
+  const examCount = examPapers.length;
 
-  const papersWithScores = papers.filter(
+  // Official exam papers with verified teacher grading
+  const gradedExamPapers = examPapers.filter(
+    (p) =>
+      typeof p.summary.percentage === "number" &&
+      p.summary.percentage !== null &&
+      (p.summary.scoreType === "teacher" ||
+        (typeof p.summary.totalTeacherMarks === "number" && p.summary.totalTeacherMarks !== null))
+  );
+  const examAvgPercentage =
+    gradedExamPapers.length > 0
+      ? Math.round(
+          gradedExamPapers.reduce((acc, curr) => acc + (curr.summary.percentage ?? 0), 0) /
+            gradedExamPapers.length
+        )
+      : null;
+
+  // Practice papers with student-entered or completed AI estimates
+  const scoredPracticePapers = practicePapers.filter(
     (p) => typeof p.summary.percentage === "number" && p.summary.percentage !== null
   );
-  const avgPercentage =
-    papersWithScores.length > 0
+  const practiceAvgPercentage =
+    scoredPracticePapers.length > 0
       ? Math.round(
-          papersWithScores.reduce((acc, curr) => acc + (curr.summary.percentage ?? 0), 0) /
-            papersWithScores.length
+          scoredPracticePapers.reduce((acc, curr) => acc + (curr.summary.percentage ?? 0), 0) /
+            scoredPracticePapers.length
         )
       : null;
 
@@ -75,17 +95,33 @@ export default function Papers() {
           <span className="stat-big">{totalPapers}</span>
         </div>
         <div className="card stat-card">
-          <span className="stat-label">Practice Papers</span>
-          <span className="stat-big">{practiceCount}</span>
-        </div>
-        <div className="card stat-card">
-          <span className="stat-label">Real Exams</span>
-          <span className="stat-big">{examCount}</span>
-        </div>
-        <div className="card stat-card">
-          <span className="stat-label">Average Score</span>
+          <span className="stat-label">
+            {filterType === "exam" ? "Real Exams" : filterType === "practice" ? "Practice Papers" : "Real Exams"}
+          </span>
           <span className="stat-big">
-            {avgPercentage !== null ? `${avgPercentage}%` : "—"}
+            {filterType === "practice" ? practiceCount : examCount}
+          </span>
+        </div>
+        <div className="card stat-card">
+          <span className="stat-label">Exam Avg (Official)</span>
+          <span className="stat-big">
+            {examAvgPercentage !== null ? `${examAvgPercentage}%` : "—"}
+          </span>
+          <span style={{ fontSize: 11, color: "var(--muted, #888)", marginTop: 2 }}>
+            {gradedExamPapers.length > 0
+              ? `${gradedExamPapers.length} graded`
+              : "No graded exams yet"}
+          </span>
+        </div>
+        <div className="card stat-card">
+          <span className="stat-label">Practice Avg</span>
+          <span className="stat-big">
+            {practiceAvgPercentage !== null ? `${practiceAvgPercentage}%` : "—"}
+          </span>
+          <span style={{ fontSize: 11, color: "var(--muted, #888)", marginTop: 2 }}>
+            {scoredPracticePapers.length > 0
+              ? `${scoredPracticePapers.length} scored`
+              : "No scored practice yet"}
           </span>
         </div>
       </div>
@@ -127,15 +163,7 @@ export default function Papers() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {filtered.map((paper) => {
-            const hasTeacherMarks =
-              typeof paper.summary.totalTeacherMarks === "number" &&
-              paper.summary.totalTeacherMarks !== null;
-            const hasStudentMarks =
-              typeof paper.summary.totalStudentMarks === "number" &&
-              paper.summary.totalStudentMarks !== null;
-            const hasAiMarks =
-              typeof paper.summary.totalAiEstimatedMarks === "number" &&
-              paper.summary.totalAiEstimatedMarks !== null;
+            const scoreInfo = formatPaperScoreDisplay(paper.summary, paper.paperType);
 
             return (
               <div
@@ -191,23 +219,19 @@ export default function Papers() {
                   </div>
 
                   <div style={{ textAlign: "right" }}>
-                    {typeof paper.summary.percentage === "number" ? (
-                      <div style={{ fontSize: 22, fontWeight: 800 }}>
-                        {paper.summary.percentage}%
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 13, color: "var(--muted, #888)" }}>
-                        Score pending
-                      </div>
-                    )}
-                    <div style={{ fontSize: 11, color: "var(--muted, #888)" }}>
-                      {hasTeacherMarks
-                        ? `Teacher: ${paper.summary.totalTeacherMarks}/${paper.summary.maxMarks}`
-                        : hasStudentMarks
-                        ? `Self-marked: ${paper.summary.totalStudentMarks}/${paper.summary.maxMarks}`
-                        : hasAiMarks
-                        ? `AI Est: ${paper.summary.totalAiEstimatedMarks}/${paper.summary.maxMarks}`
-                        : `${paper.summary.totalQuestions} questions`}
+                    <div
+                      style={{
+                        fontSize: scoreInfo.isPending || scoreInfo.isPartial ? 15 : 22,
+                        fontWeight: 800,
+                        color:
+                          scoreInfo.color ||
+                          (scoreInfo.isPending ? "var(--muted, #888)" : undefined),
+                      }}
+                    >
+                      {scoreInfo.badgeText}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--muted, #888)", marginTop: 2 }}>
+                      {scoreInfo.subText}
                     </div>
                   </div>
                 </div>
