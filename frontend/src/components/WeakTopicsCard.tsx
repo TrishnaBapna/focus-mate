@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import LogAssessmentModal from "./LogAssessmentModal";
+import TargetedAssessmentModal from "./TargetedAssessmentModal";
 import { useTopicPerformance } from "../hooks/useTopicPerformance";
 import { getStatusBadgeClass, getStatusLabel } from "../utils/topicPerformance";
 import type { TopicPerformance } from "../types/assessment";
@@ -25,6 +26,14 @@ export default function WeakTopicsCard() {
   const [modalDefaultTopic, setModalDefaultTopic] = useState("");
   const [modalDefaultSubjectId, setModalDefaultSubjectId] = useState("");
   const [togglingTopicKey, setTogglingTopicKey] = useState<string | null>(null);
+
+  const [targetedQuizModal, setTargetedQuizModal] = useState<{
+    isOpen: boolean;
+    topic?: string;
+    subjectId?: string;
+    subjectName?: string;
+    subjectEmoji?: string;
+  }>({ isOpen: false });
 
   // Filter topics based on active tab
   const filteredTopics = topics.filter((t) => {
@@ -179,6 +188,24 @@ export default function WeakTopicsCard() {
 
                           <button
                             type="button"
+                            className="link-action"
+                            style={{ color: "#9333ea", fontWeight: 700 }}
+                            onClick={() =>
+                              setTargetedQuizModal({
+                                isOpen: true,
+                                topic: rec.topic,
+                                subjectId: rec.subjectId,
+                                subjectName: rec.subjectName,
+                                subjectEmoji: rec.subjectEmoji,
+                              })
+                            }
+                            title="Take an academic practice quiz on this weak topic"
+                          >
+                            🎯 Practice Quiz
+                          </button>
+
+                          <button
+                            type="button"
                             className="link-action log-link"
                             onClick={() => openLogModalForTopic(rec.topic, rec.subjectId)}
                             title="Log new quiz score for this topic"
@@ -271,6 +298,15 @@ export default function WeakTopicsCard() {
                     key={item.topicKey}
                     item={item}
                     onLogScore={() => openLogModalForTopic(item.topic, item.subjectId)}
+                    onPracticeQuiz={() =>
+                      setTargetedQuizModal({
+                        isOpen: true,
+                        topic: item.topic,
+                        subjectId: item.subjectId,
+                        subjectName: item.subjectName,
+                        subjectEmoji: item.subjectEmoji,
+                      })
+                    }
                   />
                 ))}
               </ul>
@@ -287,6 +323,17 @@ export default function WeakTopicsCard() {
           onSave={recordNewAssessment}
         />
       )}
+
+      {targetedQuizModal.isOpen && (
+        <TargetedAssessmentModal
+          isOpen={targetedQuizModal.isOpen}
+          onClose={() => setTargetedQuizModal({ isOpen: false })}
+          initialTopic={targetedQuizModal.topic}
+          initialSubjectId={targetedQuizModal.subjectId}
+          initialSubjectName={targetedQuizModal.subjectName}
+          initialSubjectEmoji={targetedQuizModal.subjectEmoji}
+        />
+      )}
     </section>
   );
 }
@@ -294,9 +341,11 @@ export default function WeakTopicsCard() {
 function TopicRow({
   item,
   onLogScore,
+  onPracticeQuiz,
 }: {
   item: TopicPerformance;
   onLogScore: () => void;
+  onPracticeQuiz: () => void;
 }) {
   const percent = Math.min(100, Math.max(0, Math.round(item.overallAccuracy * 100)));
   const recentPercent = Math.min(100, Math.max(0, Math.round(item.recentAccuracy * 100)));
@@ -372,6 +421,15 @@ function TopicRow({
         >
           Review Notes
         </Link>
+        <button
+          type="button"
+          className="link-btn small"
+          style={{ color: "#9333ea", fontWeight: 700 }}
+          onClick={onPracticeQuiz}
+          title="Take a practice quiz on this topic"
+        >
+          🎯 Practice Quiz
+        </button>
         <button
           type="button"
           className="link-btn small"

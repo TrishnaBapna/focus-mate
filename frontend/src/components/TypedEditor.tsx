@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AiToolsPanel from "./AiToolsPanel";
+import TargetedAssessmentModal from "./TargetedAssessmentModal";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useFolders } from "../hooks/useFolders";
@@ -21,6 +22,7 @@ export default function TypedEditor({ note }: { note?: Note }) {
   const [topic, setTopic] = useState(note?.topic ?? params.get("topic") ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const sessionId = note?.sessionId ?? params.get("session");
 
@@ -127,12 +129,33 @@ export default function TypedEditor({ note }: { note?: Note }) {
         <button className="btn" onClick={handleSave} disabled={saving}>
           {saving ? "Saving…" : "Save note"}
         </button>
+        {(topic || title) && (
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => setQuizOpen(true)}
+            title="Test your understanding of this note with a practice quiz"
+          >
+            🎯 Practice Quiz
+          </button>
+        )}
         {note && (
           <button className="link-btn danger" onClick={handleDelete}>
             Delete
           </button>
         )}
       </div>
+
+      {quizOpen && (
+        <TargetedAssessmentModal
+          isOpen={quizOpen}
+          onClose={() => setQuizOpen(false)}
+          initialTopic={topic || title}
+          initialSubjectId={subjectId}
+          initialSubjectName={subjects.find((s) => s.id === subjectId)?.name}
+          initialSubjectEmoji={subjects.find((s) => s.id === subjectId)?.emoji}
+        />
+      )}
     </div>
   );
 }

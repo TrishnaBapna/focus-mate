@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { formatStudyTime, formatTargetHours, type SubjectGoalProgress } from "../utils/goals";
 import type { SubjectGoal } from "../types";
 
@@ -75,6 +76,22 @@ export default function SubjectGoalCard({ item, onEdit, onRemove }: Props) {
       </div>
 
       <div className="goal-card-footer">
+        <Link
+          to={`/focus?subject=${subject.id}`}
+          className="btn secondary small"
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+          title={`Start focus timer for ${subject.name}`}
+        >
+          ⏱️ Focus
+        </Link>
+        <Link
+          to="/analytics"
+          className="btn secondary small"
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 }}
+          title="View academic analytics"
+        >
+          📊 Stats
+        </Link>
         <button
           type="button"
           className="link-btn small"

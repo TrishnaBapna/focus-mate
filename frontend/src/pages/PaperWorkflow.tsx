@@ -5,6 +5,7 @@ import { useSubjects } from "../hooks/useSubjects";
 import { useExams } from "../hooks/useExams";
 import { addPaper, getPaper, updatePaper } from "../services/papers";
 import { addDeck, addCards } from "../services/study";
+import TargetedAssessmentModal from "../components/TargetedAssessmentModal";
 import { recognizeText } from "../utils/ocr";
 import { importPdf } from "../utils/pdf";
 import {
@@ -61,6 +62,11 @@ export default function PaperWorkflow() {
   const [questions, setQuestions] = useState<QuestionAnalysis[]>([]);
   const [actionPlan, setActionPlan] = useState<PaperActionItem[]>([]);
   const [deckCreated, setDeckCreated] = useState(false);
+  const [quizModal, setQuizModal] = useState<{
+    isOpen: boolean;
+    topic?: string;
+    mistakeTag?: string;
+  }>({ isOpen: false });
 
   // Load existing paper if editing
   useEffect(() => {
@@ -384,7 +390,7 @@ export default function PaperWorkflow() {
 
   // Study Deck creation directly from action items
   async function handleCreateStudyDeck() {
-    if (!user) return;
+    if (!user || deckCreated || loading) return;
     setLoading(true);
     try {
       const deckName = `${title} - Revision Deck`;
@@ -1180,13 +1186,22 @@ export default function PaperWorkflow() {
               </p>
             </div>
 
-            <button
-              className="btn secondary"
-              onClick={handleCreateStudyDeck}
-              disabled={loading || deckCreated}
-            >
-              {deckCreated ? "✓ Flashcards Created in Study!" : "🃏 Create Study Deck"}
-            </button>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Link
+                to="/planner"
+                className="btn secondary"
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                ⚡ Revision Planner
+              </Link>
+              <button
+                className="btn secondary"
+                onClick={handleCreateStudyDeck}
+                disabled={loading || deckCreated}
+              >
+                {deckCreated ? "✓ Flashcards Created in Study!" : "🃏 Create Study Deck"}
+              </button>
+            </div>
           </div>
 
           {actionPlan.length === 0 ? (
@@ -1268,6 +1283,21 @@ export default function PaperWorkflow() {
                     >
                       {item.recommendation}
                     </p>
+                    <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
+                      <button
+                        type="button"
+                        className="btn small secondary"
+                        style={{ fontSize: 11, padding: "3px 8px" }}
+                        onClick={() =>
+                          setQuizModal({
+                            isOpen: true,
+                            topic: item.topic,
+                          })
+                        }
+                      >
+                        🎯 Practice Quiz
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1291,6 +1321,17 @@ export default function PaperWorkflow() {
             </button>
           </div>
         </div>
+      )}
+
+      {quizModal.isOpen && (
+        <TargetedAssessmentModal
+          isOpen={quizModal.isOpen}
+          onClose={() => setQuizModal({ isOpen: false })}
+          initialTopic={quizModal.topic}
+          initialSubjectId={subjectId}
+          initialSubjectName={selectedSubject?.name}
+          initialMistakeTag={quizModal.mistakeTag}
+        />
       )}
     </div>
   );

@@ -13,6 +13,7 @@ import { importPdf } from "../utils/pdf";
 import { tidyText } from "../utils/tidy";
 import type { Note } from "../types";
 import AiToolsPanel from "./AiToolsPanel";
+import TargetedAssessmentModal from "./TargetedAssessmentModal";
 
 const MAX_PAGES = 40;
 const MAX_DOC_CHARS = 900000; // a note must stay under Firestore's ~1 MB limit
@@ -71,6 +72,7 @@ export default function ScanEditor({ note }: { note?: Note }) {
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const stopRef = useRef(false);
   const urlsRef = useRef<string[]>([]);
@@ -487,6 +489,9 @@ export default function ScanEditor({ note }: { note?: Note }) {
       <AiToolsPanel
         text={text}
         onInsert={(t) => setText((c) => (c ? c + "\n\n" : "") + t)}
+        subjectId={subjectId}
+        subjectName={subjects.find((s) => s.id === subjectId)?.name ?? ""}
+        topic={topic || title}
       />
 
       {error && <p className="auth-error">{error}</p>}
@@ -495,12 +500,34 @@ export default function ScanEditor({ note }: { note?: Note }) {
         <button className="btn" onClick={() => void handleSave()} disabled={busy}>
           {saving ? "Saving…" : "Save note"}
         </button>
+        {(topic || title) && (
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => setQuizOpen(true)}
+            title="Test your understanding of this note with a practice quiz"
+            disabled={busy}
+          >
+            🎯 Practice Quiz
+          </button>
+        )}
         {note && (
           <button className="link-btn danger" onClick={() => void handleDelete()} disabled={busy}>
             Delete
           </button>
         )}
       </div>
+
+      {quizOpen && (
+        <TargetedAssessmentModal
+          isOpen={quizOpen}
+          onClose={() => setQuizOpen(false)}
+          initialTopic={topic || title}
+          initialSubjectId={subjectId}
+          initialSubjectName={subjects.find((s) => s.id === subjectId)?.name}
+          initialSubjectEmoji={subjects.find((s) => s.id === subjectId)?.emoji}
+        />
+      )}
     </div>
   );
 }

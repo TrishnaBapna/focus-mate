@@ -6,6 +6,7 @@ import {
   syllabusProgress,
   urgency,
 } from "../utils/exams";
+import TargetedAssessmentModal from "./TargetedAssessmentModal";
 import type { Exam } from "../types/exam";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 
 export default function ExamCard({ exam, onToggle, onAddTopics, onRemoveTopic, onDelete }: Props) {
   const [topicText, setTopicText] = useState("");
+  const [quizTopic, setQuizTopic] = useState<string | null>(null);
   const days = daysUntil(exam.date);
   const progress = syllabusProgress(exam);
 
@@ -75,6 +77,24 @@ export default function ExamCard({ exam, onToggle, onAddTopics, onRemoveTopic, o
                 {item.done ? "✓" : "○"}
               </button>
               <span className="syllabus-title">{item.title}</span>
+              {!item.done && (
+                <button
+                  type="button"
+                  className="btn secondary small"
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "0.75rem",
+                    marginRight: 6,
+                    background: "rgba(170, 59, 255, 0.08)",
+                    color: "#9333ea",
+                    borderColor: "rgba(170, 59, 255, 0.25)",
+                  }}
+                  onClick={() => setQuizTopic(item.title)}
+                  title={`Generate practice quiz on ${item.title}`}
+                >
+                  🎯 Quiz
+                </button>
+              )}
               <button className="task-delete" onClick={() => onRemoveTopic(item.id)} title="Remove topic">
                 ✕
               </button>
@@ -99,6 +119,17 @@ export default function ExamCard({ exam, onToggle, onAddTopics, onRemoveTopic, o
       <button className="link-btn danger align-start" onClick={onDelete}>
         Delete exam
       </button>
+
+      {quizTopic && (
+        <TargetedAssessmentModal
+          isOpen={Boolean(quizTopic)}
+          onClose={() => setQuizTopic(null)}
+          initialTopic={quizTopic}
+          initialSubjectId={exam.subjectId}
+          initialSubjectName={exam.subjectName}
+          initialSubjectEmoji={exam.subjectEmoji}
+        />
+      )}
     </section>
   );
 }

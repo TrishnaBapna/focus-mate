@@ -1,7 +1,9 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useFocus } from "../hooks/useFocus";
 import { useSubjects } from "../hooks/useSubjects";
 import { useSessions } from "../hooks/useSessions";
+import TargetedAssessmentModal from "../components/TargetedAssessmentModal";
 import { CHEERS, growthEmoji, plantFor } from "../utils/garden";
 import { formatDuration } from "../utils/time";
 import type { SessionMode } from "../types";
@@ -35,6 +37,20 @@ export default function Focus() {
   const f = useFocus();
   const { subjects } = useSubjects();
   const { sessions } = useSessions(5);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  const { phase, subjectId, topic, setSubjectId, setTopic } = f;
+  useEffect(() => {
+    const sId = searchParams.get("subject");
+    if (sId && phase === "setup" && !subjectId) {
+      setSubjectId(sId);
+    }
+    const t = searchParams.get("topic");
+    if (t && phase === "setup" && !topic) {
+      setTopic(t);
+    }
+  }, [searchParams, phase, subjectId, topic, setSubjectId, setTopic]);
 
   // ---------- Running (focus or break) ----------
   if (f.phase === "focus" || f.phase === "break") {
@@ -188,6 +204,23 @@ export default function Focus() {
               📝 Add a note
             </Link>
           )}
+          {(f.topic || f.subject?.name) && (
+            <button
+              type="button"
+              className="btn secondary"
+              style={{
+                background: "rgba(170, 59, 255, 0.12)",
+                color: "#9333ea",
+                border: "1px solid rgba(170, 59, 255, 0.3)",
+              }}
+              onClick={() => setQuizOpen(true)}
+            >
+              🎯 Practice Quiz
+            </button>
+          )}
+          <Link to="/planner" className="btn secondary">
+            ⚡ Revision Plan
+          </Link>
           {f.mode === "pomodoro" && (
             <button className="btn secondary" onClick={f.startBreak}>
               Start {f.breakMinutes}-min break
@@ -198,6 +231,16 @@ export default function Focus() {
           </button>
         </div>
       </div>
+      {quizOpen && (
+        <TargetedAssessmentModal
+          isOpen={quizOpen}
+          onClose={() => setQuizOpen(false)}
+          initialTopic={f.topic || f.subject?.name || ""}
+          initialSubjectId={f.subject?.id}
+          initialSubjectName={f.subject?.name}
+          initialSubjectEmoji={f.subject?.emoji}
+        />
+      )}
     </>
     );
   }

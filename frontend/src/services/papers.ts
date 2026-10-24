@@ -47,6 +47,20 @@ export function deletePaper(uid: string, id: string): Promise<void> {
   return deleteDoc(doc(db, "users", uid, "papers", id));
 }
 
+export async function togglePaperActionItem(
+  uid: string,
+  paperId: string,
+  actionId: string,
+  completed: boolean
+): Promise<void> {
+  const paper = await getPaper(uid, paperId);
+  if (!paper || !Array.isArray(paper.actionPlan)) return;
+  const updatedPlan = paper.actionPlan.map((item) =>
+    item.id === actionId ? { ...item, completed } : item
+  );
+  return updatePaper(uid, paperId, { actionPlan: updatedPlan });
+}
+
 export async function getPaper(uid: string, id: string): Promise<Paper | null> {
   const snap = await getDoc(doc(db, "users", uid, "papers", id));
   if (!snap.exists()) return null;

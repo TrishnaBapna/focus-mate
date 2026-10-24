@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import SubjectGoalCard from "../components/SubjectGoalCard";
 import SubjectGoalModal from "../components/SubjectGoalModal";
 import { useAchievements } from "../hooks/useAchievements";
@@ -117,7 +118,14 @@ export default function Subjects() {
           </p>
         </div>
 
-        <div className="header-actions">
+        <div className="header-actions" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <Link
+            to="/analytics"
+            className="btn secondary"
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            📊 Analytics
+          </Link>
           <button
             type="button"
             className="btn"
@@ -356,7 +364,7 @@ export default function Subjects() {
                       </button>
                     </div>
 
-                    <div className="subject-card-bottom">
+                    <div className="subject-card-bottom" style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                       {existingGoal ? (
                         <button
                           type="button"
@@ -376,6 +384,14 @@ export default function Subjects() {
                           + Set target
                         </button>
                       )}
+                      <Link
+                        to={`/focus?subject=${s.id}`}
+                        className="subject-goal-chip"
+                        style={{ textDecoration: "none" }}
+                        title={`Focus on ${s.name}`}
+                      >
+                        ⏱️ Focus
+                      </Link>
                     </div>
                   </div>
                 );

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import AiToolsPanel from "./AiToolsPanel";
+import TargetedAssessmentModal from "./TargetedAssessmentModal";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useFolders } from "../hooks/useFolders";
@@ -27,6 +28,7 @@ export default function VoiceEditor({ note }: { note?: Note }) {
   const [topic, setTopic] = useState(note?.topic ?? params.get("topic") ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   // Whatever was already in the text box when recording starts is kept,
   // and the live transcript is added after it.
@@ -205,6 +207,9 @@ export default function VoiceEditor({ note }: { note?: Note }) {
       <AiToolsPanel
         text={text}
         onInsert={(t) => setText((c) => (c ? c + "\n\n" : "") + t)}
+        subjectId={subjectId}
+        subjectName={subjects.find((s) => s.id === subjectId)?.name ?? note?.subjectName}
+        topic={topic}
       />
 
       {error && <p className="auth-error">{error}</p>}
@@ -213,12 +218,38 @@ export default function VoiceEditor({ note }: { note?: Note }) {
         <button className="btn" onClick={handleSave} disabled={saving || recorder.recording}>
           {saving ? "Saving…" : "Save note"}
         </button>
+        {(topic || text.trim()) && (
+          <button
+            type="button"
+            className="btn secondary"
+            style={{
+              background: "rgba(170, 59, 255, 0.12)",
+              color: "#9333ea",
+              border: "1px solid rgba(170, 59, 255, 0.3)",
+            }}
+            onClick={() => setQuizOpen(true)}
+            title="Generate practice quiz from this voice note"
+          >
+            🎯 Practice Quiz
+          </button>
+        )}
         {note && (
           <button className="link-btn danger" onClick={handleDelete}>
             Delete
           </button>
         )}
       </div>
+
+      {quizOpen && (
+        <TargetedAssessmentModal
+          isOpen={quizOpen}
+          onClose={() => setQuizOpen(false)}
+          initialTopic={topic || title || "Voice note"}
+          initialSubjectId={subjectId}
+          initialSubjectName={subjects.find((s) => s.id === subjectId)?.name ?? note?.subjectName}
+          initialSubjectEmoji={subjects.find((s) => s.id === subjectId)?.emoji ?? note?.subjectEmoji}
+        />
+      )}
     </div>
   );
 }

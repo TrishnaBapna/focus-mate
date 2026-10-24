@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import AcademicAnalyticsView from "../components/AcademicAnalyticsView";
 import WeeklyReportCard from "../components/WeeklyReportCard";
 import { useSessions } from "../hooks/useSessions";
 import { computeAnalytics, hourLabel, type Range } from "../utils/analytics";
@@ -11,6 +12,7 @@ const RANGES: { id: Range; label: string; previous: string }[] = [
 ];
 
 export default function Analytics() {
+  const [viewTab, setViewTab] = useState<"academic" | "focus">("academic");
   const { sessions, loading } = useSessions(2000);
   const [range, setRange] = useState<Range>("week");
   const a = useMemo(() => computeAnalytics(sessions, range), [sessions, range]);
@@ -24,28 +26,57 @@ export default function Analytics() {
   return (
     <>
       <div className="analytics-head">
-        <h1>Analytics 📊</h1>
-        <div className="mode-tabs">
-          {RANGES.map((r) => (
+        <div>
+          <h1 style={{ margin: "0 0 6px" }}>Analytics 📊</h1>
+          <div className="mode-tabs" role="tablist" aria-label="Analytics View">
             <button
-              key={r.id}
               type="button"
-              className={`chip ${range === r.id ? "selected" : ""}`}
-              onClick={() => setRange(r.id)}
+              role="tab"
+              aria-selected={viewTab === "academic"}
+              className={`chip ${viewTab === "academic" ? "selected" : ""}`}
+              onClick={() => setViewTab("academic")}
             >
-              {r.label}
+              🎓 Academic Mastery
             </button>
-          ))}
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewTab === "focus"}
+              className={`chip ${viewTab === "focus" ? "selected" : ""}`}
+              onClick={() => setViewTab("focus")}
+            >
+              ⏱️ Focus & Habits
+            </button>
+          </div>
         </div>
+
+        {viewTab === "focus" && (
+          <div className="mode-tabs">
+            {RANGES.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                className={`chip ${range === r.id ? "selected" : ""}`}
+                onClick={() => setRange(r.id)}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {!loading && sessions.length === 0 && (
-        <p className="empty-note">Finish a focus session and your analytics will appear here ✨</p>
-      )}
+      {viewTab === "academic" ? (
+        <AcademicAnalyticsView />
+      ) : (
+        <>
+          {!loading && sessions.length === 0 && (
+            <p className="empty-note">Finish a focus session and your analytics will appear here ✨</p>
+          )}
 
-      <WeeklyReportCard />
+          <WeeklyReportCard />
 
-      <div className="stat-grid">
+          <div className="stat-grid">
         <div className="card stat-card">
           <span className="stat-label">⏱️ Total focus</span>
           <span className="stat-big">{formatDuration(a.totalSeconds)}</span>
@@ -213,5 +244,7 @@ export default function Analytics() {
         </section>
       </div>
     </>
-  );
+  )}
+</>
+);
 }

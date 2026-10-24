@@ -20,7 +20,9 @@ import {
 import { nextStatus } from "../utils/tasks";
 import { formatDuration } from "../utils/time";
 import MonthCalendar from "../components/MonthCalendar";
+import RevisionPlannerView from "../components/RevisionPlannerView";
 import TaskRow from "../components/TaskRow";
+import { useRevisionPlanner } from "../hooks/useRevisionPlanner";
 import type { Plan, PlanRepeat } from "../types";
 
 function firstOfMonth(d: Date) {
@@ -36,7 +38,9 @@ export default function Planner() {
   const { tasks } = useTasks();
   const { sessions } = useSessions(500);
   const { exams } = useExams();
+  const { allTasks: revisionTasks, updateStatus: updateRevisionStatus } = useRevisionPlanner();
 
+  const [plannerTab, setPlannerTab] = useState<"revision" | "calendar">("revision");
   const todayKey = dayKey(new Date());
   const [selectedKey, setSelectedKey] = useState(todayKey);
   const [viewMonth, setViewMonth] = useState(() => firstOfMonth(new Date()));
@@ -63,7 +67,7 @@ export default function Planner() {
 
   const getMarks = (key: string) => ({
     plan: plans.some((p) => occursOn(p, key)),
-    task: taskDays.has(key),
+    task: taskDays.has(key) || revisionTasks.some((r) => r.dueDate === key && r.status !== "completed"),
     studied: studiedDays.has(key),
     exam: examDays.has(key),
   });
@@ -71,6 +75,7 @@ export default function Planner() {
   const dayPlans = plans
     .filter((p) => occursOn(p, selectedKey))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const dayRevisionTasks = revisionTasks.filter((r) => r.dueDate === selectedKey);
   const dayTasks = tasks.filter((t) => t.deadline === selectedKey);
   const dayExams = exams.filter((e) => e.date === selectedKey);
   const daySessions = sessions.filter((s) => dayKey(sessionDate(s)) === selectedKey);
@@ -131,9 +136,36 @@ export default function Planner() {
 
   return (
     <>
-      <h1 className="page-title">Planner 📅</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+        <div>
+          <h1 className="page-title" style={{ margin: "0 0 6px" }}>Planner 📅</h1>
+          <div className="mode-tabs" role="tablist" aria-label="Planner Views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={plannerTab === "revision"}
+              className={`chip ${plannerTab === "revision" ? "selected" : ""}`}
+              onClick={() => setPlannerTab("revision")}
+            >
+              ⚡ Personalized Revision
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={plannerTab === "calendar"}
+              className={`chip ${plannerTab === "calendar" ? "selected" : ""}`}
+              onClick={() => setPlannerTab("calendar")}
+            >
+              📅 Study Blocks & Calendar
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <div className="planner-grid">
+      {plannerTab === "revision" ? (
+        <RevisionPlannerView />
+      ) : (
+        <div className="planner-grid">
         <section className="card">
           <MonthCalendar
             month={viewMonth}
@@ -265,6 +297,48 @@ export default function Planner() {
             </>
           )}
 
+          {dayRevisionTasks.length > 0 && (
+            <>
+              <h4>⚡ Revision tasks due</h4>
+              <ul className="plan-list">
+                {dayRevisionTasks.map((r) => (
+                  <li
+                    key={r.id}
+                    className="plan-row"
+                    style={{
+                      borderLeftColor:
+                        r.status === "completed"
+                          ? "#10b981"
+                          : r.priority === "urgent"
+                          ? "#ef4444"
+                          : "var(--accent)",
+                    }}
+                  >
+                    <div className="plan-main">
+                      <span className="plan-title">
+                        {r.subjectEmoji} {r.title}
+                      </span>
+                      <span className="task-meta">
+                        {r.topic} · ⏱️ ~{r.suggestedDurationMinutes}m · {r.priority.toUpperCase()}
+                      </span>
+                    </div>
+                    <button
+                      className="btn secondary small"
+                      onClick={() =>
+                        void updateRevisionStatus(
+                          r.id,
+                          r.status === "completed" ? "pending" : "completed"
+                        )
+                      }
+                    >
+                      {r.status === "completed" ? "Done ✓" : "Mark done"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
           {dayTasks.length > 0 && (
             <>
               <h4>Tasks due</h4>
@@ -298,6 +372,7 @@ export default function Planner() {
           )}
         </section>
       </div>
-    </>
-  );
+    )}
+  </>
+);
 }

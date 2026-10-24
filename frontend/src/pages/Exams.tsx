@@ -78,13 +78,22 @@ export default function Exams() {
         <h1 className="page-title" style={{ margin: 0 }}>
           Exams 🎓
         </h1>
-        <Link
-          to="/papers"
-          className="btn secondary"
-          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          📄 Past & Practice Papers
-        </Link>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link
+            to="/planner"
+            className="btn secondary"
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            ⚡ Revision Planner
+          </Link>
+          <Link
+            to="/papers"
+            className="btn secondary"
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            📄 Past & Practice Papers
+          </Link>
+        </div>
       </div>
 
       <form className="card exam-form" onSubmit={handleAdd}>

@@ -7,7 +7,8 @@ import { useDecks } from "../hooks/useDecks";
 import { useSubjects } from "../hooks/useSubjects";
 import { addDeck } from "../services/study";
 import { isDue, todayKey } from "../utils/study";
-import type { StudyCard } from "../types/study";
+import TargetedAssessmentModal from "../components/TargetedAssessmentModal";
+import type { Deck, StudyCard } from "../types/study";
 
 export default function Study() {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ export default function Study() {
   const [name, setName] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [reviewing, setReviewing] = useState<StudyCard[] | null>(null);
+  const [quizDeck, setQuizDeck] = useState<Deck | null>(null);
 
   const today = todayKey();
   const dueAll = cards.filter((c) => isDue(c, today));
@@ -43,13 +45,22 @@ export default function Study() {
     <>
       <div className="notes-header">
         <h1>Study 🃏</h1>
-        <button
-          className="btn"
-          disabled={dueAll.length === 0}
-          onClick={() => setReviewing(dueAll)}
-        >
-          Review all due ({dueAll.length})
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <Link
+            to="/planner"
+            className="btn secondary"
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            ⚡ Revision Planner
+          </Link>
+          <button
+            className="btn"
+            disabled={dueAll.length === 0}
+            onClick={() => setReviewing(dueAll)}
+          >
+            Review all due ({dueAll.length})
+          </button>
+        </div>
       </div>
 
       <form className="card deck-form" onSubmit={handleAdd}>
@@ -105,11 +116,35 @@ export default function Study() {
                   <Link to={`/study/${deck.id}`} className="btn secondary small">
                     Open
                   </Link>
+                  <button
+                    type="button"
+                    className="btn secondary small"
+                    style={{
+                      background: "rgba(170, 59, 255, 0.08)",
+                      color: "#9333ea",
+                      borderColor: "rgba(170, 59, 255, 0.25)",
+                    }}
+                    onClick={() => setQuizDeck(deck)}
+                    title={`Generate practice quiz on ${deck.name}`}
+                  >
+                    🎯 Quiz
+                  </button>
                 </div>
               </section>
             );
           })}
         </div>
+      )}
+
+      {quizDeck && (
+        <TargetedAssessmentModal
+          isOpen={Boolean(quizDeck)}
+          onClose={() => setQuizDeck(null)}
+          initialTopic={quizDeck.name}
+          initialSubjectId={quizDeck.subjectId}
+          initialSubjectName={quizDeck.subjectName}
+          initialSubjectEmoji={quizDeck.subjectEmoji}
+        />
       )}
     </>
   );

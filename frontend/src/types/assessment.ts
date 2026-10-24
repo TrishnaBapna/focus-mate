@@ -75,3 +75,52 @@ export interface ReviewedTopicRecord {
   subjectId: string;
   reviewedAt: Timestamp | null;
 }
+
+export type QuestionType = "mcq" | "numerical" | "short_answer";
+
+export interface TargetedQuestion {
+  id: string;
+  type: QuestionType;
+  prompt: string;
+  options?: string[];
+  correctOptionIndex?: number;
+  numericalAnswer?: number;
+  tolerancePercent?: number; // e.g. 5 for ±5%
+  expectedUnit?: string;
+  modelAnswer?: string;
+  rubricKeywords?: string[];
+  explanation: string;
+  difficulty: "foundational" | "standard" | "challenge";
+  targetedMistakeTag?: string;
+}
+
+export interface StudentAnswer {
+  questionId?: string;
+  selectedOptionIndex?: number | null;
+  numericValue?: number | null;
+  textAnswer?: string;
+  isFlagged?: boolean;
+}
+
+export interface QuestionGradingResult {
+  questionId: string;
+  isCorrect: boolean;
+  earnedMarks: number;
+  maxMarks: number;
+  gradingMethod: "deterministic_mcq" | "deterministic_numerical" | "ai_estimated" | "self_evaluated";
+  feedback: string;
+  studentAnswerDisplay: string;
+  correctAnswerDisplay: string;
+  isFlagged?: boolean;
+}
+
+export interface RetestComparison {
+  hasPrevious: boolean;
+  previousAccuracy: number | null;
+  currentAccuracy: number;
+  deltaPercent: number | null;
+  isImproved: boolean;
+  insight: string;
+  disclaimer: string;
+}
+

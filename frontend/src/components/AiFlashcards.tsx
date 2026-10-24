@@ -23,7 +23,7 @@ export default function AiFlashcards({ cards }: { cards: Flashcard[] }) {
   }
 
   async function save() {
-    if (!user) return;
+    if (!user || saving) return;
     setSaving(true);
     setMessage("");
     try {
